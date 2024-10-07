@@ -1,0 +1,18 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+Are you to verify the user?
+<form method="POST">
+    <label for="admin_comments">Admin Comments:</label>
+    <textarea name="admin_comments" rows="4" cols="50">{{ user.admin_comments }}</textarea>
+
+    <label for="verification_status">Verification Status:</label>
+    <select name="verification_status">
+        <option value="verify" {% if user.is_verified %}selected{% endif %}>Verify</option>
+        <option value="not_verify" {% if not user.is_verified %}selected{% endif %}>Do Not Verify</option>
+    </select>
+
+    <button type="submit">Submit</button>
+</form>
+{% endblock %}
+

@@ -1,0 +1,25 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<h2>Mini-Admin Overview</h2>
+
+<h3>Unassigned Students: {{ unassigned_students_count }}</h3>
+
+<h3>Mini-Admins:</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Mini-Admin</th>
+            <th>Number of Assigned Students</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for miniadmin in mini_admins %}
+        <tr>
+            <td>{{ miniadmin.name }}</td>
+            <td>{{ miniadmin.assigned_students|length }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

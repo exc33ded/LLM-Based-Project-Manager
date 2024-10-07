@@ -1,0 +1,18 @@
+{% extends "miniadmin/base_miniadmin.html" %}
+
+{% block content %}
+<h1>Edit Task: {{ task.title }}</h1>
+
+<form action="{{ url_for('miniadmin_routes.edit_task', task_id=task.id) }}" method="POST">
+    <label for="title">Task Title:</label>
+    <input type="text" name="title" value="{{ task.title }}" required>
+
+    <label for="description">Task Description:</label>
+    <textarea name="description" required>{{ task.description }}</textarea>
+
+    <label for="due_date">Due Date:</label>
+    <input type="date" name="due_date" value="{{ task.due_date.strftime('%Y-%m-%d') }}" required>
+
+    <button type="submit">Update Task</button>
+</form>
+{% endblock %}

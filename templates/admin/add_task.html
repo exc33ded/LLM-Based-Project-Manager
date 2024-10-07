@@ -1,0 +1,12 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<h1>Add Task to {{ project.title }}</h1>
+
+<form action="{{ url_for('admin_routes.add_task', project_id=project.id) }}" method="POST">
+    <input type="text" name="title" required placeholder="Task Title">
+    <textarea name="description" required placeholder="Task Description"></textarea>
+    <input type="date" name="due_date" required>
+    <button type="submit">Add Task</button>
+</form>
+{% endblock %}

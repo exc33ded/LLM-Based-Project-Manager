@@ -1,0 +1,25 @@
+{% extends "student/base_students.html" %}
+
+{% block content %}
+<h1>Project Archive</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Student Name</th>
+            <th>Project Name</th>
+            <th>Roll No</th>
+            <th>Synopsis</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for project in projects %}
+        <tr>
+            <td>{{ project.owner.name }}</td>
+            <td>{{ project.title }}</td>
+            <td>{{ project.owner.rollno }}</td>  
+            <td><a href="{{ url_for('static', filename='uploads/synopsis/' + project.synopsis_filename) }}" target="_blank">View Synopsis</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

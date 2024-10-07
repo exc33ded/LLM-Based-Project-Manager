@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Register</h1>
+    <form action="{{ url_for('auth_routes.register') }}" method="post" enctype="multipart/form-data">
+        <label for="name">Name:</label>
+        <input type="text" name="name" required>
+        
+        <label for="email">Email:</label>
+        <input type="email" name="email" required>
+        
+        <label for="rollno">Roll No:</label>
+        <input type="text" name="rollno" required>
+        
+        <label for="password">Password:</label>
+        <input type="password" name="password" required>
+        
+        <label for="role">Role:</label>
+        <select name="role" required>
+            <option value="student">Student</option>
+            <option value="mini-admin">Instructor</option>
+        </select>
+
+        <label for="id_card">ID Card:</label>
+        <input type="file" name="id_card" required>
+        
+        <button type="submit">Register</button>
+    </form>
+
+{% endblock %}

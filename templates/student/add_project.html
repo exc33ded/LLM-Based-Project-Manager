@@ -1,0 +1,19 @@
+{% include "student/base_students.html" %}
+
+{% block content %}
+
+<h1>Add Project</h1>
+<form method="POST" enctype="multipart/form-data">
+    <label>Project Title:</label>
+    <input type="text" name="title" required><br>
+
+    <label>Start Date:</label>
+    <input type="date" name="start_date" required><br>
+
+    <label>Upload Synopsis:</label>
+    <input type="file" name="synopsis" required><br>
+
+    <button type="submit">Add Project</button>
+</form>
+
+{% endblock %}

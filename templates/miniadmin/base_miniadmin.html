@@ -1,0 +1,21 @@
+<header>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('miniadmin_routes.miniadmin_dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('miniadmin_routes.view_projects') }}">View Projects</a></li>
+            <li><a href="{{ url_for('miniadmin_routes.miniadmin_logout') }}">Logout</a></li>
+        </ul>
+    </nav>
+</header>
+<main>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+    {% block content %}{% endblock %}
+</main>

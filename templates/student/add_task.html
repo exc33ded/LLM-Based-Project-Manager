@@ -1,0 +1,21 @@
+{% extends "student/base_students.html" %}
+
+{% block content %}
+<h1>Add Task</h1>
+
+<form method="POST" action="{{ url_for('student_routes.add_task', project_id=project.id) }}">
+    <label for="title">Task Title:</label><br>
+    <input type="text" id="title" name="title" required><br><br>
+    
+    <label for="description">Task Description:</label><br>
+    <textarea id="description" name="description" rows="4" required></textarea><br><br>
+    
+    <label for="due_date">Due Date:</label><br>
+    <input type="date" id="due_date" name="due_date" required><br><br>
+    
+    <button type="submit">Add Task</button>
+</form>
+
+<a href="{{ url_for('student_routes.view_tasks', project_id=project.id) }}">Cancel</a>
+
+{% endblock %}

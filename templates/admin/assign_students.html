@@ -1,0 +1,29 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<h2>Assign Students to Mini-Admins</h2>
+
+<form method="POST">
+    <label for="miniadmin">Select Mini-Admin:</label>
+    <select name="miniadmin_id" id="miniadmin" required>
+        {% for miniadmin in mini_admins %}
+        <option value="{{ miniadmin.id }}">{{ miniadmin.name }}</option>
+        {% endfor %}
+    </select>
+
+    <h3>Unassigned Students:</h3>
+    {% if students %}
+    <ul>
+        {% for student in students %}
+        <li>
+            <input type="checkbox" name="students" value="{{ student.id }}"> {{ student.name }} ({{ student.rollno }})
+        </li>
+        {% endfor %}
+    </ul>
+    <button type="submit">Assign Students</button>
+    {% else %}
+    <p>No unassigned students available.</p>
+    {% endif %}
+</form>
+
+{% endblock %}

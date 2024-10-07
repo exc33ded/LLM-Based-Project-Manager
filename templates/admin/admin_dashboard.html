@@ -1,0 +1,54 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+
+<h1>Admin Dashboard</h1>
+
+<h2>Mini-Admin Assignment</h2>
+<form method="POST" action="{{ url_for('admin_routes.assign_students') }}">
+
+    <h3>Unassigned Students</h3>
+    <ul>
+        {% for student in students %}
+            <li>
+                <input type="checkbox" name="students" value="{{ student.id }}">
+                {{ student.name }} ({{ student.rollno }})
+            </li>
+        {% endfor %}
+    </ul>
+
+    <button type="submit">Assign Students</button>
+</form>
+
+<h2>Current Assignments</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Mini-Admin</th>
+            <th>Assigned Students</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for miniadmin in mini_admins %}
+            <tr>
+                <td>{{ miniadmin.name }}</td>
+                <td>
+                    <ul>
+                        {% for student in miniadmin.assigned_students %}
+                            <li>
+                                {{ student.name }} ({{ student.rollno }})
+                                <form method="POST" action="{{ url_for('admin_routes.unassign_student') }}">
+                                    <input type="hidden" name="student_id" value="{{ student.id }}">
+                                    <input type="hidden" name="miniadmin_id" value="{{ miniadmin.id }}">
+                                    <button type="submit">Unassign</button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

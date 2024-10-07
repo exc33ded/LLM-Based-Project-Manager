@@ -1,0 +1,23 @@
+{% extends "miniadmin/base_miniadmin.html" %}
+
+{% block content %}
+<h1>Projects</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Student Name</th>
+            <th>Number of Projects</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user, project_count in student_projects %}
+        <tr>
+            <td>{{ user.name }}</td>
+            <td>{{ project_count }}</td>
+            <td><a href="{{ url_for('miniadmin_routes.view_student_projects', user_id=user.id) }}">View Projects</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

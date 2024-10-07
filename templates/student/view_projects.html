@@ -1,0 +1,30 @@
+{% extends "student/base_students.html" %}
+
+{% block content %}
+<h1>Your Projects</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Start Date</th>
+            <th>Synopsis</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for project in projects %}
+        <tr>
+            <td><a href="{{ url_for('student_routes.view_tasks', project_id=project.id) }}">{{ project.title }}</a></td>
+            <td>{{ project.start_date.strftime('%Y-%m-%d') }}</td>
+            <td><a href="{{ url_for('static', filename='uploads/synopsis/' + project.synopsis_filename) }}" target="_blank">View Synopsis</a></td>
+            <td>
+                <a href="{{ url_for('student_routes.edit_project', project_id=project.id) }}">Edit</a>
+                <form action="{{ url_for('student_routes.delete_project', project_id=project.id) }}" method="POST" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
