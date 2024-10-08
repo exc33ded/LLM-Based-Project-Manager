@@ -108,7 +108,7 @@ def project_archive():
         flash('Unauthorized access', 'danger')
         return redirect(url_for('auth_routes.login'))
     if not current_user.is_verified:
-        flash("Only verified students can access the project archive.", "danger")
+        flash("Only verified students can access the project archive.", "info")
         return redirect(url_for('student_routes.view_projects'))
 
     projects = Project.query.all()
@@ -205,7 +205,7 @@ def change_task_status(task_id):
     project = Project.query.get_or_404(project_id)
 
     if current_user.id != project.student_id:
-        flash("You are not authorized to change tasks in this project.", 'danger')
+        flash("You are not authorized to change tasks in this project.", 'info')
         return redirect(url_for('student_routes.project_archive'))
 
     new_status = request.form['status']
