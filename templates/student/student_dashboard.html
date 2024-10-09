@@ -1,11 +1,13 @@
 {% include "student/base_students.html" %}
 
 {% block content %}
-<h1>Welcome, {{ user.name }}!</h1>
-Student Dashboard
-<div class="container">
-    <a href="{{ url_for('student_routes.add_project') }}" class="btn btn-primary">
-        Create New Project
-    </a>
+<div>
+    <h1>Welcome, {{ user.name }}!</h1>
+    Student Dashboard
+    <div>
+        <a href="{{ url_for('student_routes.add_project') }}">
+            Create New Project
+        </a>
+    </div>
 </div>
 {% endblock %}

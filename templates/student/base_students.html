@@ -4,26 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.tailwindcss.css">
+    <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
     <title>{% block title %}PMS{% endblock %}</title>
-    <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-        }
-
-        /* Flexbox structure to ensure full height layout */
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        main {
-            margin-bottom: 0; /* Ensure no margin conflicts with footer */
-        }
-    </style>
 </head>
 <body>
+    <div>
     <header>
         <nav class="border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
             <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
@@ -101,11 +90,13 @@
             });
         });
     </script>
-    <!-- Footer -->
-    <footer class="border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
-        <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-            <span class="text-sm text-gray-500 sm:text-center dark:text-gray-400">© 2024 <a href="https://github.com/exc33ded/Advanced-Project-Manager-for-AMU" class="hover:underline">APM</a>. All Rights Reserved.</span>
-        </div>
-    </footer>
+</div>
 </body>
 </html>
+
+<!-- Footer -->
+<footer class="fixed bottom-0 left-0 z-20 w-full p-4 bg-white border-t border-gray-200 shadow md:flex md:items-center md:justify-between md:p-6 dark:bg-gray-800 dark:border-gray-600">
+    <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+        <span class="text-sm text-gray-500 sm:text-center dark:text-gray-400">© 2024 <a href="https://github.com/exc33ded/Advanced-Project-Manager-for-AMU" class="hover:underline">APM</a>. All Rights Reserved.</span>
+    </div>
+</footer>

@@ -2,29 +2,36 @@
 
 {% block content %}
 <h1>Your Projects</h1>
-<table>
-    <thead>
-        <tr>
-            <th>Title</th>
-            <th>Start Date</th>
-            <th>Synopsis</th>
+<div class="w-full p-4 text-center bg-white border border-gray-200 rounded-lg shadow sm:p-8">
+    <table id="example" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Start Date</th>
+                <th>Synopsis</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for project in projects %}
         <tr>
-            <td><a href="{{ url_for('student_routes.view_tasks', project_id=project.id) }}">{{ project.title }}</a></td>
+            <td><a href="{{ url_for('student_routes.view_tasks', project_id=project.id) }}" class='text-sky-400'>{{ project.title }}</a></td>
             <td>{{ project.start_date.strftime('%Y-%m-%d') }}</td>
-            <td><a href="{{ url_for('static', filename='uploads/synopsis/' + project.synopsis_filename) }}" target="_blank">View Synopsis</a></td>
+            <td><a href="{{ url_for('static', filename='uploads/synopsis/' + project.synopsis_filename) }}" target="_blank" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">View Synopsis</a></td>
             <td>
-                <a href="{{ url_for('student_routes.edit_project', project_id=project.id) }}">Edit</a>
+                <a href="{{ url_for('student_routes.edit_project', project_id=project.id) }}" class="text-white bg-zinc-700 hover:bg-zinc-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-zinc-700 dark:hover:bg-zinc-700 focus:outline-none dark:focus:ring-zinc-800">Edit</a>
                 <form action="{{ url_for('student_routes.delete_project', project_id=project.id) }}" method="POST" style="display:inline;">
-                    <button type="submit">Delete</button>
+                    <button type="submit" class="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900">Delete</button>
                 </form>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+</div>
+<script>
+    $(document).ready(function() {
+        $('#example').DataTable();
+    });
+</script>
 {% endblock %}
