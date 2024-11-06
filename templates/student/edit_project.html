@@ -1,17 +1,39 @@
 {% extends "student/base_students.html" %}
 
 {% block content %}
-<h1>Edit Project</h1>
-<form method="POST" enctype="multipart/form-data">
-    <label>Project Title:</label>
-    <input type="text" name="title" value="{{ project.title }}" required><br>
+<h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Edit Project</h1>
 
-    <label>Start Date:</label>
-    <input type="date" name="start_date" value="{{ project.start_date }}" required><br>
+<form method="POST" enctype="multipart/form-data" class="space-y-6 max-w-xl mx-auto bg-white p-8 rounded-lg shadow-md">
+    
+    <!-- Project Title -->
+    <div>
+        <label for="title" class="block text-sm font-medium text-gray-700">Project Title:</label>
+        <input type="text" name="title" id="title" value="{{ project.title }}" required 
+               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+    </div>
 
-    <label>Upload New Synopsis (Optional):</label>
-    <input type="file" name="synopsis"><br>
+    <!-- Start Date -->
+    <div>
+        <label for="start_date" class="block text-sm font-medium text-gray-700">Start Date:</label>
+        <input type="date" name="start_date" id="start_date" value="{{ project.start_date }}" required 
+               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+    </div>
 
-    <button type="submit">Update Project</button>
+    <!-- Upload New Synopsis (Optional) -->
+    <div>
+        <label for="synopsis" class="block text-sm font-medium text-gray-700">Upload New Synopsis (Optional):</label>
+        <input type="file" name="synopsis" id="synopsis" 
+               class="mt-1 block w-full text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+
+    <!-- Submit Button -->
+    <div>
+        <button type="submit" 
+                class="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            Update Project
+        </button>
+    </div>
+
 </form>
+
 {% endblock %}

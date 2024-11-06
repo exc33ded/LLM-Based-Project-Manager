@@ -4,6 +4,7 @@ from models import Project, db, Task
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
+import random
 
 student_routes = Blueprint('student_routes', __name__)
 
@@ -39,8 +40,9 @@ def add_project():
         start_date_str = request.form['start_date']
         start_date = datetime.strptime(start_date_str, '%Y-%m-%d') 
         synopsis = request.files['synopsis']
-        
-        unique_synopsis_filename = f"{current_user.name}_{current_user.rollno}_{title}_synopsis.{synopsis.filename.split('.')[-1]}"
+        num = random.randint(1, 10000)
+
+        unique_synopsis_filename = f"{current_user.name}_{current_user.rollno}__{num}__{title}_synopsis.{synopsis.filename.split('.')[-1]}"
         synopsis_filename = secure_filename(unique_synopsis_filename)
         synopsis.save(os.path.join(UPLOAD_FOLDER, synopsis_filename))
 

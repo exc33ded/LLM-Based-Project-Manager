@@ -60,7 +60,8 @@ if __name__ == "__main__":
                 rollno='ADMIN01',  
                 id_card='ID_CARD_001',  
                 password=hashed_password, 
-                role='admin'
+                role='admin',
+                is_verified=True
             )
             db.session.add(admin)
             db.session.commit()
