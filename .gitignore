@@ -1,4 +1,5 @@
 .MCA
 Documentation/
-instance/
-static/uploads
+/instance
+/static/uploads/id/
+/static/uploads/synopsis/

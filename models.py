@@ -35,7 +35,7 @@ class Project(db.Model):
     synopsis_filename = db.Column(db.String(200), nullable=False)  # Path to synopsis PDF
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Link to student or mini-admin
 
-    tasks = db.relationship('Task', backref='project', lazy=True)  # Tasks within the project
+    tasks = db.relationship('Task', backref='project', cascade="all, delete", lazy=True)  # Tasks within the project
     
     def __repr__(self):
         return f"Project('{self.title}', '{self.start_date}')"
