@@ -4,6 +4,11 @@ from extensions import db
 from flask_login import login_user, login_required, current_user, logout_user
 from werkzeug.security import check_password_hash
 from datetime import datetime
+import random
+from werkzeug.utils import secure_filename
+import os
+
+UPLOAD_FOLDER = 'static/uploads/synopsis'
 
 admin_routes = Blueprint('admin_routes', __name__)
 
@@ -92,6 +97,36 @@ def admin_logout():
 
 # ------------------------------ Managing Project with Tasks for the students ----------------------------------
 
+@admin_routes.route('/admin/projects/create/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def add_project(user_id):
+    if current_user.role != 'admin':
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('auth_routes.login'))
+
+    user = User.query.get_or_404(user_id)
+    
+    if request.method == 'POST':
+        title = request.form['title']
+        start_date_str = request.form['start_date']
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d') 
+        synopsis = request.files['synopsis']
+        num = random.randint(1, 10000)
+        
+        unique_synopsis_filename = f"{current_user.name}_{current_user.rollno}__{num}__{title}_synopsis.{synopsis.filename.split('.')[-1]}"
+        synopsis_filename = secure_filename(unique_synopsis_filename)
+        synopsis.save(os.path.join(UPLOAD_FOLDER, synopsis_filename))
+
+        new_project = Project(title=title, start_date=start_date, synopsis_filename=synopsis_filename, student_id=user.id)
+        db.session.add(new_project)
+        db.session.commit()
+
+        flash("Project added successfully!", "success")
+
+        return redirect(url_for('admin_routes.view_student_projects', user_id=user.id))
+
+    return render_template('admin/create_project.html', user=user)
+
 def check_task_status(task):
     if task.due_date.date() < datetime.now().date():
         if task.status != 'Finished':
@@ -146,7 +181,7 @@ def view_project_tasks(project_id):
                            backlog_tasks=backlog_tasks, 
                            in_progress_tasks=in_progress_tasks, 
                            progressed_tasks=progressed_tasks, 
-                           finished_tasks=finished_tasks)
+                           finished_tasks=finished_tasks, referrer=request.referrer)
 
 @admin_routes.route('/admin/projects/tasks/move/<int:task_id>', methods=['POST'])
 @login_required

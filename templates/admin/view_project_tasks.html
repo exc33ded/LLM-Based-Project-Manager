@@ -122,7 +122,8 @@
 
 <!-- Finished Tasks -->
 
-<div id="progressed" class="task-category hidden">
+<!-- Finished Tasks -->
+<div id="finished" class="task-category hidden">
     <h3 class="text-xl font-semibold mb-4">Finished</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {% for task in finished_tasks %}
@@ -157,6 +158,7 @@
 <br>
 
 <a href="{{ url_for('admin_routes.add_task', project_id=project.id) }}" class="bg-green-600 text-white px-6 py-3 rounded-lg mt-4 hover:bg-green-700">Add New Task</a>
+<a href="{{ referrer }}" class="bg-green-600 text-white px-6 py-3 rounded-lg mt-4 hover:bg-green-700">Go Back</a>
 
 </div>
 

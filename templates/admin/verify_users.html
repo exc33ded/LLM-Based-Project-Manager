@@ -2,51 +2,57 @@
 
 {% block content %}
 
-<h1>Pending User Verifications</h1>
+<div class="mx-auto p-8">
+    <!-- Header -->
+    <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">Projects Overview</h1>
+    
+    <!-- Projects Table -->
+    <div class="bg-white p-6 rounded-lg shadow-lg">
+        <table id="example" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Roll No</th>
+                    <th>Role Taken</th>
+                    <th>View Document</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for user in pending_users %}
+                <tr>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.rollno }}</td>
+                    <td>{{ user.role }}</td>
+                    <td><a href="{{ url_for('static', filename='uploads/id/' + user.id_card) }}" target="_blank"
+                            class="hover:underline text-blue-600">View
+                            Document</a></td>
+                    <td>
+                        <div class="flex space-x-4">
+                            <a href="{{ url_for('admin_routes.verify_user', user_id=user.id) }}"
+                                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                                Verify
+                            </a>
+                            <a href="{{ url_for('admin_routes.delete_user', user_id=user.id) }}"
+                                class="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-red-600 dark:hover:bg-red-700 focus:outline-none dark:focus:ring-red-800">
+                                Delete
+                            </a>
+                        </div>
+                        
+                </td>
 
-<!-- Display table for pending verifications -->
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Roll No</th>
-            <th>Role Taken</th>
-            <th>View Document</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for user in pending_users %}
-        <tr>
-            <td>{{ user.name }}</td>
-            <td>{{ user.email }}</td>
-            <td>{{ user.rollno }}</td>
-            <td>{{ user.role }}</td>
-            <td><a href="{{ url_for('static', filename='uploads/id/' + user.id_card) }}" target="_blank">View Document</a></td>
-            <td><a href="{{ url_for('admin_routes.verify_user', user_id=user.id) }}">Verify</a></td>
-            <td><a href="{{ url_for('admin_routes.delete_user', user_id=user.id) }}">Delete</a></td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<!-- Modal or section for verification (admin comments, verify, not verify) -->
-{% if selected_user %}
-<div class="verification-section">
-    <h2>Verify User: {{ selected_user.name }}</h2>
-
-    <form method="POST" action="{{ url_for('admin_routes.verify_user', user_id=selected_user.id) }}">
-        <div>
-            <label for="admin_comments">Admin Comments:</label>
-            <textarea name="admin_comments" id="admin_comments" rows="4" cols="50">{{ selected_user.admin_comments }}</textarea>
-        </div>
-        <div>
-            <button type="submit" name="verification_status" value="verify">Verify</button>
-            <button type="submit" name="verification_status" value="not_verify">Not Verify</button>
-        </div>
-    </form>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
-{% endif %}
+<script>
+    $(document).ready(function() {
+        $('#example').DataTable();
+    });
+</script>
 
 {% endblock %}
