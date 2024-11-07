@@ -78,7 +78,7 @@ def view_student_projects(user_id):
         return redirect(url_for('auth_routes.login'))
 
     user = User.query.get_or_404(user_id)
-    projects = Project.query.filter_by(student_id=user.id).all()
+    projects = Project.query.filter_by(student_id=user_id).all()
     
     return render_template('miniadmin/view_student_projects.html', user=user, projects=projects)
 
@@ -89,6 +89,9 @@ def view_project_tasks(project_id):
     if current_user.role != 'mini-admin':
         flash('Unauthorized access', 'danger')
         return redirect(url_for('auth_routes.login'))
+
+    user_id = request.args.get('user_id')
+    user = User.query.get_or_404(user_id) if user_id else None
 
     project = Project.query.get_or_404(project_id)
 
@@ -107,7 +110,7 @@ def view_project_tasks(project_id):
     progressed_tasks = [task for task in tasks if task.status == 'Progressed']
     finished_tasks = [task for task in tasks if task.status == 'Finished']
 
-    return render_template('miniadmin/view_project_tasks.html', project=project,
+    return render_template('miniadmin/view_project_tasks.html', user=user, project=project,
                            backlog_tasks=backlog_tasks,
                            in_progress_tasks=in_progress_tasks,
                            progressed_tasks=progressed_tasks,

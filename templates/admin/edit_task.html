@@ -1,18 +1,56 @@
 {% extends "admin/base_admin.html" %}
 
 {% block content %}
-<h1>Edit Task: {{ task.title }}</h1>
+<h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Edit Task: {{ task.title }}</h2>
 
-<form action="{{ url_for('admin_routes.edit_task', task_id=task.id) }}" method="POST">
-    <label for="title">Task Title:</label>
-    <input type="text" name="title" value="{{ task.title }}" required>
+<form action="{{ url_for('admin_routes.edit_task', task_id=task.id) }}" method="POST" class="space-y-6 max-w-xl mx-auto bg-white p-8 rounded-lg shadow-md">
+    
+    <!-- Task Title -->
+    <div>
+        <label for="title" class="block text-sm font-medium text-gray-700">Task Title:</label>
+        <input type="text" name="title" value="{{ task.title }}" id="title" required 
+               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+    </div>
 
-    <label for="description">Task Description:</label>
-    <textarea name="description" required>{{ task.description }}</textarea>
+    <!-- Task Description -->
+    <div>
+        <label for="description" class="block text-sm font-medium text-gray-700">Task Description:</label>
+        <textarea name="description" id="description" required 
+                  class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="4">{{ task.description }}</textarea>
+    </div>
 
-    <label for="due_date">Due Date:</label>
-    <input type="date" name="due_date" value="{{ formatted_due_date }}" required>
+    <!-- Due Date -->
+    <div>
+        <label for="due_date" class="block text-sm font-medium text-gray-700">Due Date:</label>
+        <input type="date" name="due_date" id="due_date" value="{{ formatted_due_date }}" required 
+               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+    </div>
 
-    <button type="submit">Update Task</button>
+    <!-- Task Status -->
+    <div>
+        <label for="status" class="block text-sm font-medium text-gray-700">Task Status:</label>
+        <select name="status" id="status" required 
+                class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option value="Backlog" {% if task.status == 'Backlog' %} selected {% endif %}>Backlog</option>
+            <option value="In Progress" {% if task.status == 'In Progress' %} selected {% endif %}>In Progress</option>
+            <option value="Progressed" {% if task.status == 'Progressed' %} selected {% endif %}>Progressed</option>
+            <option value="Finished" {% if task.status == 'Finished' %} selected {% endif %}>Finished</option>
+        </select>
+    </div>
+
+    <!-- Submit Button -->
+    <div>
+        <button type="submit" 
+                class="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            Update Task
+        </button>
+    </div>
+
+    <!-- Back to Task List Button -->
+    <div class="text-left">
+        <button onclick="history.back()" class="text-white bg-gray-700 hover:bg-gray-300 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-200 focus:outline-none dark:focus:ring-blue-800">Back to Task List</button>
+    </div>
+
 </form>
+
 {% endblock %}

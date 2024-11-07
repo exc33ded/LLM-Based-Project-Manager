@@ -15,7 +15,7 @@
     <tbody class="divide-y divide-gray-200">
         {% for project in projects %}
         <tr>
-            <td><a href="{{ url_for('miniadmin_routes.view_project_tasks', project_id=project.id) }}" class="hover:underline text-sky-800">{{ project.title }}</a></td>
+            <td><a href="{{ url_for('miniadmin_routes.view_project_tasks', project_id=project.id) }}?user_id={{ user.id }}" class="hover:underline text-sky-800">{{ project.title }}</a></td>
             <td><a href="{{ url_for('static', filename='uploads/synopsis/' + project.synopsis_filename) }}" target="_blank" class="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-500">View Synopsis</a></td>
             <td class="px-4 py-4">
                 <form action="{{ url_for('miniadmin_routes.delete_project', project_id=project.id) }}" method="POST" style="display:inline;">

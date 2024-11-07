@@ -1,13 +1,133 @@
-{% include "student/base_students.html" %}
+{% extends "student/base_students.html" %}
 
 {% block content %}
-<div>
-    <h1>Welcome, {{ user.name }}!</h1>
-    Student Dashboard
-    <div>
-        <a href="{{ url_for('student_routes.add_project') }}">
-            Create New Project
-        </a>
-    </div>
-</div>
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <h1 class="text-4xl font-semibold text-center text-gray-800 mb-8">{{ greeting }}</h1>
+
+    <!-- Overview Section: Task Progress -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      
+      <!-- Active Projects Section -->
+      <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Your Active Projects</h2>
+
+        <!-- Scrollable Project Cards -->
+        <div class="overflow-x-auto flex space-x-6 pb-4" style="max-height: 350px;">
+          <!-- Display only first 2 projects -->
+          {% for project in projects[:2] %}
+            <div class="flex-none w-64 bg-blue-100 p-4 rounded-lg shadow-lg">
+              <h3 class="text-lg font-semibold text-gray-700">{{ project.title }}</h3>
+              <p class="text-sm text-gray-500">Start Date: {{ project.start_date.strftime('%Y-%m-%d') }}</p>
+              
+              <!-- Task Status Counts for each Project -->
+              <div class="grid grid-cols-2 gap-4 mt-4">
+                <div class="text-center">
+                  <p class="text-sm font-semibold text-gray-700">Backlog Tasks</p>
+                  <p class="text-xl font-bold">{{ project_task_counts[loop.index0].backlog }}</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-sm font-semibold text-gray-700">In Progress Tasks</p>
+                  <p class="text-xl font-bold">{{ project_task_counts[loop.index0].in_progress }}</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-sm font-semibold text-gray-700">Progressed Tasks</p>
+                  <p class="text-xl font-bold">{{ project_task_counts[loop.index0].progressed }}</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-sm font-semibold text-gray-700">Completed Tasks</p>
+                  <p class="text-xl font-bold">{{ project_task_counts[loop.index0].finished }}</p>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- Show More Projects if more than 2 -->
+        {% if projects|length > 2 %}
+          <div class="text-center mt-4">
+            <button onclick="document.getElementById('extra-projects').classList.toggle('hidden')" class="text-blue-600">
+              Show More Projects
+            </button>
+          </div>
+        {% endif %}
+
+        <!-- Display remaining projects with scroll option -->
+        <div id="extra-projects" class="overflow-x-auto flex space-x-6 mt-4 hidden">
+          {% for project in projects[2:] %}
+            <div class="flex-none w-64 bg-blue-100 p-4 rounded-lg shadow-lg">
+              <h3 class="text-lg font-semibold text-gray-700">{{ project.title }}</h3>
+              <p class="text-sm text-gray-500">Start Date: {{ project.start_date.strftime('%Y-%m-%d') }}</p>
+              
+              <!-- Task Status Counts for each Project -->
+              <div class="grid grid-cols-2 gap-4 mt-4">
+                <div class="text-center">
+                  <p class="text-sm font-semibold text-gray-700">Backlog Tasks</p>
+                  <p class="text-xl font-bold">{{ project_task_counts[loop.index0].backlog }}</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-sm font-semibold text-gray-700">In Progress Tasks</p>
+                  <p class="text-xl font-bold">{{ project_task_counts[loop.index0].in_progress }}</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-sm font-semibold text-gray-700">Progressed Tasks</p>
+                  <p class="text-xl font-bold">{{ project_task_counts[loop.index0].progressed }}</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-sm font-semibold text-gray-700">Completed Tasks</p>
+                  <p class="text-xl font-bold">{{ project_task_counts[loop.index0].finished }}</p>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Task Progress Overview -->
+      <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Task Progress Overview</h2>
+        
+        <!-- Completion Progress -->
+        <div class="relative pt-1 mb-6">
+          <div class="flex justify-between items-center">
+            <span class="text-sm font-semibold text-gray-700">Completion</span>
+            <span class="text-sm font-semibold text-gray-700">{{ progress_percentage }}%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full">
+            <div class="bg-green-500 text-xs text-center text-white py-1 rounded-full" style="width: {{ progress_percentage }}%">
+              {{ progress_percentage }}%
+            </div>
+          </div>
+        </div>
+
+        <!-- Task Count Overview -->
+        <div class="grid grid-cols-2 gap-6">
+          <div class="bg-red-100 p-6 rounded-lg text-center">
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">Completed Tasks</h3>
+            <p class="text-2xl font-bold">{{ completed_tasks }} / {{ total_tasks }}</p>
+          </div>
+          <div class="bg-yellow-100 p-6 rounded-lg text-center">
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">In Progress Tasks</h3>
+            <p class="text-2xl font-bold">{{ in_progress_tasks }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Upcoming Deadlines Section -->
+    <section class="bg-white p-6 rounded-lg shadow-lg mb-8">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Upcoming Deadlines</h2>
+      {% if upcoming_deadlines %}
+        <ul class="space-y-4">
+          {% for title, deadline in upcoming_deadlines %}
+            <li class="flex justify-between items-center border-b py-2 text-gray-700">
+              <span>{{ title }}</span>
+              <span class="text-sm text-gray-500">{{ deadline }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-gray-600">No upcoming deadlines.</p>
+      {% endif %}
+    </section>
+  </div>
 {% endblock %}

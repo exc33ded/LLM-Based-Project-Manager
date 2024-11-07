@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
-from models import Project, db, Task
+from models import Project, db, Task, User
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
@@ -11,13 +11,69 @@ student_routes = Blueprint('student_routes', __name__)
 UPLOAD_FOLDER = 'static/uploads/synopsis'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@student_routes.route('/student/dashboard')
+@student_routes.route('/student/dashboard', methods=['GET', 'POST'])
 @login_required
 def student_dashboard():
     if current_user.role != 'student':
         flash('Unauthorized access', 'danger')
         return redirect(url_for('auth_routes.login'))
-    return render_template('student/student_dashboard.html', user=current_user)
+
+    # Get the student's projects
+    projects = Project.query.filter_by(student_id=current_user.id).all()
+
+    total_tasks = 0
+    completed_tasks = 0
+    in_progress_tasks = 0
+    backlog_tasks = 0
+    progressed_tasks = 0
+    project_task_counts = []  # To store task count for each project
+
+    # Calculate task counts for each project
+    for project in projects:
+        project_tasks = Task.query.filter_by(project_id=project.id).all()
+        project_backlog = sum(1 for task in project_tasks if task.status == 'Backlog')
+        project_in_progress = sum(1 for task in project_tasks if task.status == 'In Progress')
+        project_progressed = sum(1 for task in project_tasks if task.status == 'Progressed')
+        project_finished = sum(1 for task in project_tasks if task.status == 'Finished')
+
+        # Store task count for the project
+        project_task_counts.append({
+            'project': project,
+            'backlog': project_backlog,
+            'in_progress': project_in_progress,
+            'progressed': project_progressed,
+            'finished': project_finished
+        })
+
+        # Aggregate task counts across all projects
+        backlog_tasks += project_backlog
+        in_progress_tasks += project_in_progress
+        progressed_tasks += project_progressed
+        completed_tasks += project_finished
+        total_tasks += len(project_tasks)
+
+    # Calculate progress percentage (if any tasks exist)
+    progress_percentage = (completed_tasks / total_tasks * 100) if total_tasks else 0
+
+    # Get upcoming deadlines for the student's projects
+    upcoming_deadlines = [(project.title, project.start_date.strftime('%Y-%m-%d')) for project in projects]
+
+    return render_template(
+        'student/student_dashboard.html',
+        user=current_user,
+        greeting=f"Welcome, {current_user.name}!",
+        projects=projects,
+        total_tasks=total_tasks,
+        completed_tasks=completed_tasks,
+        in_progress_tasks=in_progress_tasks,
+        progress_percentage=progress_percentage,
+        upcoming_deadlines=upcoming_deadlines,
+        backlog_tasks_count=backlog_tasks,
+        progressed_tasks_count=progressed_tasks,
+        finished_tasks_count=completed_tasks,
+        project_task_counts=project_task_counts  # Pass project-wise task counts
+    )
+
 
 @student_routes.route('/student/projects')
 @login_required
@@ -25,8 +81,10 @@ def view_projects():
     if current_user.role != 'student':
         flash('Unauthorized access', 'danger')
         return redirect(url_for('auth_routes.login'))
+    
+    user = User.query.get_or_404(current_user.id)
     projects = Project.query.filter_by(student_id=current_user.id).all()
-    return render_template('student/view_projects.html', projects=projects)
+    return render_template('student/view_projects.html', projects=projects, user=user)
 
 @student_routes.route('/student/projects/add', methods=['GET', 'POST'])
 @login_required
@@ -144,7 +202,7 @@ def view_tasks(project_id):
     progressed_tasks = Task.query.filter_by(project_id=project_id, status='Progressed').all()
     finished_tasks = Task.query.filter_by(project_id=project_id, status='Finished').all()
 
-    return render_template('student/tasks.html', project=project,
+    return render_template('student/tasks.html', project=project, user=current_user,
                            backlog_tasks=backlog_tasks, in_progress_tasks=in_progress_tasks,
                            progressed_tasks=progressed_tasks, finished_tasks=finished_tasks)
     
