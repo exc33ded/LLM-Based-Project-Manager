@@ -1,95 +1,190 @@
 {% extends "admin/base_admin.html" %}
 
 {% block content %}
-    <h2>Tasks for Project: {{ project.title }}</h2>
+<div class="mr-2 ml-4 mt-4 mb-4">
+<h2 class="text-3xl font-bold text-gray-800 mb-6">Tasks for Project: {{ project.title }}</h2>
 
-    <!-- Backlog Tasks -->
-    <h3>Backlog</h3>
-    <ul>
+<!-- Tabs for Task Categories -->
+<div class="flex space-x-4 mb-6">
+    <button id="backlogTab"
+        class="bg-transparent hover:bg-red-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded"
+        onclick="showCategory('backlog')">Backlog</button>
+    <button id="inProgressTab"
+        class="bg-transparent hover:bg-yellow-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded"
+        onclick="showCategory('inProgress')">In Progress</button>
+    <button id="progressedTab"
+        class="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded"
+        onclick="showCategory('progressed')">Progressed</button>
+    <button id="finishedTab"
+        class="bg-transparent hover:bg-green-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded"
+        onclick="showCategory('finished')">Finished</button>
+</div>
+
+<!-- Task Categories -->
+<div id="backlog" class="task-category hidden">
+    <h3 class="text-xl font-semibold mb-4">Backlog</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {% for task in backlog_tasks %}
-            <li>
-                <strong>{{ task.title }}</strong> - Due: {{ task.due_date.strftime('%Y-%m-%d') }}
-                <form action="{{ url_for('admin_routes.delete_task', task_id=task.id) }}" method="POST" style="display:inline;">
-                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+        <div class="bg-white p-4 rounded-lg shadow-2xl">
+            <strong class="text-lg">{{ task.title }}</strong>
+            <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+            <div class="mt-4 flex justify-between items-center">
+                <form action="{{ url_for('admin_routes.delete_task', task_id=task.id) }}" method="POST"
+                    style="display:inline;">
+                    <button type="submit"
+                        class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700">Delete</button>
                 </form>
-                <a href="{{ url_for('admin_routes.edit_task', task_id=task.id) }}" class="btn btn-primary btn-sm">Edit</a>
-                <form action="{{ url_for('admin_routes.move_task', task_id=task.id) }}" method="POST" style="display:inline;">
-                    <select name="status" onchange="this.form.submit()">
-                        <option value="Backlog" {% if task.status == 'Backlog' %} selected {% endif %}>Backlog</option>
-                        <option value="In Progress" {% if task.status == 'In Progress' %} selected {% endif %}>In Progress</option>
-                        <option value="Progressed" {% if task.status == 'Progressed' %} selected {% endif %}>Progressed</option>
-                        <option value="Finished" {% if task.status == 'Finished' %} selected {% endif %}>Finished</option>
-                    </select>
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
-
-    <!-- In Progress Tasks -->
-    <h3>In Progress</h3>
-    <ul>
-        {% for task in in_progress_tasks %}
-            <li>
-                <strong>{{ task.title }}</strong> - Due: {{ task.due_date.strftime('%Y-%m-%d') }}
-                <form action="{{ url_for('admin_routes.delete_task', task_id=task.id) }}" method="POST" style="display:inline;">
-                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                </form>
-                <a href="{{ url_for('admin_routes.edit_task', task_id=task.id) }}" class="btn btn-primary btn-sm">Edit</a>
-                <form action="{{ url_for('admin_routes.move_task', task_id=task.id) }}" method="POST" style="display:inline;">
-                    <select name="status" onchange="this.form.submit()">
-                        <option value="Backlog" {% if task.status == 'Backlog' %} selected {% endif %}>Backlog</option>
-                        <option value="In Progress" {% if task.status == 'In Progress' %} selected {% endif %}>In Progress</option>
-                        <option value="Progressed" {% if task.status == 'Progressed' %} selected {% endif %}>Progressed</option>
-                        <option value="Finished" {% if task.status == 'Finished' %} selected {% endif %}>Finished</option>
-                    </select>
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
-
-    <!-- Progressed Tasks -->
-    <h3>Progressed</h3>
-    <ul>
-        {% for task in progressed_tasks %}
-            <li>
-                <strong>{{ task.title }}</strong> - Due: {{ task.due_date.strftime('%Y-%m-%d') }}
-                <form action="{{ url_for('admin_routes.delete_task', task_id=task.id) }}" method="POST" style="display:inline;">
-                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                </form>
-                <a href="{{ url_for('admin_routes.edit_task', task_id=task.id) }}" class="btn btn-primary btn-sm">Edit</a>
-                <form action="{{ url_for('admin_routes.move_task', task_id=task.id) }}" method="POST" style="display:inline;">
-                    <select name="status" onchange="this.form.submit()">
-                        <option value="Backlog" {% if task.status == 'Backlog' %} selected {% endif %}>Backlog</option>
-                        <option value="In Progress" {% if task.status == 'In Progress' %} selected {% endif %}>In Progress</option>
-                        <option value="Progressed" {% if task.status == 'Progressed' %} selected {% endif %}>Progressed</option>
-                        <option value="Finished" {% if task.status == 'Finished' %} selected {% endif %}>Finished</option>
-                    </select>
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
-
-    <!-- Finished Tasks -->
-    <h3>Finished</h3>
-    <ul>
-        {% for task in finished_tasks %}
-        <li>
-            <strong>{{ task.title }}</strong> - Due: {{ task.due_date.strftime('%Y-%m-%d') }}
-            <form action="{{ url_for('admin_routes.delete_task', task_id=task.id) }}" method="POST" style="display:inline;">
-                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-            </form>
-            <a href="{{ url_for('admin_routes.edit_task', task_id=task.id) }}" class="btn btn-primary btn-sm">Edit</a>
-            <form action="{{ url_for('admin_routes.move_task', task_id=task.id) }}" method="POST" style="display:inline;">
-                <select name="status" onchange="this.form.submit()">
-                    <option value="Backlog" {% if task.status == 'Backlog' %} selected {% endif %}>Backlog</option>
-                    <option value="In Progress" {% if task.status == 'In Progress' %} selected {% endif %}>In Progress</option>
-                    <option value="Progressed" {% if task.status == 'Progressed' %} selected {% endif %}>Progressed</option>
-                    <option value="Finished" {% if task.status == 'Finished' %} selected {% endif %}>Finished</option>
+                <a href="{{ url_for('admin_routes.edit_task', task_id=task.id) }}"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Edit</a>
+            </div>
+            <form action="{{ url_for('admin_routes.move_task', task_id=task.id) }}" method="POST" class="mt-4">
+                <select name="status" onchange="this.form.submit()"
+                    class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm">
+                    <option value="Backlog" {% if task.status=='Backlog' %} selected {% endif %}>Backlog</option>
+                    <option value="In Progress" {% if task.status=='In Progress' %} selected {% endif %}>In Progress
+                    </option>
+                    <option value="Progressed" {% if task.status=='Progressed' %} selected {% endif %}>Progressed
+                    </option>
+                    <option value="Finished" {% if task.status=='Finished' %} selected {% endif %}>Finished</option>
                 </select>
             </form>
-        </li>
+        </div>
         {% endfor %}
-    </ul>
+    </div>
+</div>
 
-    <a href="{{ url_for('admin_routes.add_task', project_id=project.id) }}" class="btn btn-success">Add New Task</a>
+<!-- In Progress Tasks -->
+<div id="inProgress" class="task-category hidden">
+    <h3 class="text-xl font-semibold mb-4">In Progress</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for task in in_progress_tasks %}
+        <div class="bg-white p-4 rounded-lg shadow-2xl">
+            <strong class="text-lg">{{ task.title }}</strong>
+            <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+            <div class="mt-4 flex justify-between items-center">
+                <form action="{{ url_for('admin_routes.delete_task', task_id=task.id) }}" method="POST"
+                    style="display:inline;">
+                    <button type="submit"
+                        class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700">Delete</button>
+                </form>
+                <a href="{{ url_for('admin_routes.edit_task', task_id=task.id) }}"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Edit</a>
+            </div>
+            <form action="{{ url_for('admin_routes.move_task', task_id=task.id) }}" method="POST" class="mt-4">
+                <select name="status" onchange="this.form.submit()"
+                    class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm">
+                    <option value="Backlog" {% if task.status=='Backlog' %} selected {% endif %}>Backlog</option>
+                    <option value="In Progress" {% if task.status=='In Progress' %} selected {% endif %}>In Progress
+                    </option>
+                    <option value="Progressed" {% if task.status=='Progressed' %} selected {% endif %}>Progressed
+                    </option>
+                    <option value="Finished" {% if task.status=='Finished' %} selected {% endif %}>Finished</option>
+                </select>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Progressed Tasks -->
+
+<div id="progressed" class="task-category hidden">
+    <h3 class="text-xl font-semibold mb-4">Progreesed</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for task in progressed_tasks %}
+        <div class="bg-white p-4 rounded-lg shadow-2xl">
+            <strong class="text-lg">{{ task.title }}</strong>
+            <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+            <div class="mt-4 flex justify-between items-center">
+                <form action="{{ url_for('admin_routes.delete_task', task_id=task.id) }}" method="POST"
+                    style="display:inline;">
+                    <button type="submit"
+                        class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700">Delete</button>
+                </form>
+                <a href="{{ url_for('admin_routes.edit_task', task_id=task.id) }}"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Edit</a>
+            </div>
+            <form action="{{ url_for('admin_routes.move_task', task_id=task.id) }}" method="POST" class="mt-4">
+                <select name="status" onchange="this.form.submit()"
+                    class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm">
+                    <option value="Backlog" {% if task.status=='Backlog' %} selected {% endif %}>Backlog</option>
+                    <option value="In Progress" {% if task.status=='In Progress' %} selected {% endif %}>In Progress
+                    </option>
+                    <option value="Progressed" {% if task.status=='Progressed' %} selected {% endif %}>Progressed
+                    </option>
+                    <option value="Finished" {% if task.status=='Finished' %} selected {% endif %}>Finished</option>
+                </select>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Finished Tasks -->
+
+<div id="progressed" class="task-category hidden">
+    <h3 class="text-xl font-semibold mb-4">Finished</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for task in finished_tasks %}
+        <div class="bg-white p-4 rounded-lg shadow-2xl">
+            <strong class="text-lg">{{ task.title }}</strong>
+            <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+            <div class="mt-4 flex justify-between items-center">
+                <form action="{{ url_for('admin_routes.delete_task', task_id=task.id) }}" method="POST"
+                    style="display:inline;">
+                    <button type="submit"
+                        class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700">Delete</button>
+                </form>
+                <a href="{{ url_for('admin_routes.edit_task', task_id=task.id) }}"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Edit</a>
+            </div>
+            <form action="{{ url_for('admin_routes.move_task', task_id=task.id) }}" method="POST" class="mt-4">
+                <select name="status" onchange="this.form.submit()"
+                    class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm">
+                    <option value="Backlog" {% if task.status=='Backlog' %} selected {% endif %}>Backlog</option>
+                    <option value="In Progress" {% if task.status=='In Progress' %} selected {% endif %}>In Progress
+                    </option>
+                    <option value="Progressed" {% if task.status=='Progressed' %} selected {% endif %}>Progressed
+                    </option>
+                    <option value="Finished" {% if task.status=='Finished' %} selected {% endif %}>Finished</option>
+                </select>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<br>
+
+<a href="{{ url_for('admin_routes.add_task', project_id=project.id) }}" class="bg-green-600 text-white px-6 py-3 rounded-lg mt-4 hover:bg-green-700">Add New Task</a>
+
+</div>
+
+<script>
+    function showCategory(category) {
+        // Hide all categories
+        const categories = document.querySelectorAll('.task-category');
+        categories.forEach(category => category.classList.add('hidden'));
+
+        // Show the selected category
+        const activeCategory = document.getElementById(category);
+        if (activeCategory) {
+            activeCategory.classList.remove('hidden');
+        }
+
+        // Reset tab styles
+        const tabs = document.querySelectorAll('button');
+        tabs.forEach(tab => tab.classList.remove('bg-blue-700'));
+
+        // Highlight the active tab
+        const activeTab = document.getElementById(category + 'Tab');
+        if (activeTab) {
+            activeTab.classList.add('bg-blue-700');
+        }
+    }
+
+    // Default category to show (Backlog)
+    showCategory('backlog');
+</script>
+</div>
 {% endblock %}

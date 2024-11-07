@@ -1,23 +1,40 @@
 {% extends "admin/base_admin.html" %}
 
 {% block content %}
-<h1>Projects</h1>
-<table>
-    <thead>
-        <tr>
-            <th>Student Name</th>
-            <th>Number of Projects</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for user, project_count in student_projects %}
-        <tr>
-            <td>{{ user.name }}</td>
-            <td>{{ project_count }}</td>
-            <td><a href="{{ url_for('admin_routes.view_student_projects', user_id=user.id) }}">View Projects</a></td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="max-w-4xl mx-auto p-8">
+    <!-- Header -->
+    <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">Projects Overview</h1>
+    
+    <!-- Projects Table -->
+    <div class="bg-white p-6 rounded-lg shadow-lg">
+        <table id="example" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Number of Projects</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for user, project_count in student_projects %}
+                <tr>
+                    <td class="px-4 py-4 text-gray-800 font-medium">{{ user.name }}</td>
+                    <td class="px-4 py-4 text-gray-700">{{ project_count }}</td>
+                    <td class="px-4 py-4">
+                        <a href="{{ url_for('admin_routes.view_student_projects', user_id=user.id) }}" 
+                           class="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            View Projects
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    $(document).ready(function() {
+        $('#example').DataTable();
+    });
+</script>
 {% endblock %}

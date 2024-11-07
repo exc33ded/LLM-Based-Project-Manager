@@ -1,29 +1,49 @@
 {% extends "admin/base_admin.html" %}
 
 {% block content %}
-<h2>Assign Students to Mini-Admins</h2>
+<div class="max-w-3xl mx-auto p-8">
+    <!-- Header -->
+    <h2 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">Assign Students to Mini-Admins</h2>
 
-<form method="POST">
-    <label for="miniadmin">Select Mini-Admin:</label>
-    <select name="miniadmin_id" id="miniadmin" required>
-        {% for miniadmin in mini_admins %}
-        <option value="{{ miniadmin.id }}">{{ miniadmin.name }}</option>
-        {% endfor %}
-    </select>
+    <!-- Form -->
+    <form method="POST" class="bg-white p-8 rounded-lg shadow-lg space-y-6">
+        
+        <!-- Mini-Admin Selection -->
+        <div>
+            <label for="miniadmin" class="block text-lg font-semibold text-gray-700">Select Mini-Admin:</label>
+            <select name="miniadmin_id" id="miniadmin" required 
+                    class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for miniadmin in mini_admins %}
+                    <option value="{{ miniadmin.id }}">{{ miniadmin.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-    <h3>Unassigned Students:</h3>
-    {% if students %}
-    <ul>
-        {% for student in students %}
-        <li>
-            <input type="checkbox" name="students" value="{{ student.id }}"> {{ student.name }} ({{ student.rollno }})
-        </li>
-        {% endfor %}
-    </ul>
-    <button type="submit">Assign Students</button>
-    {% else %}
-    <p>No unassigned students available.</p>
-    {% endif %}
-</form>
+        <!-- Unassigned Students List -->
+        <div>
+            <h3 class="text-lg font-semibold text-gray-700">Unassigned Students:</h3>
+            {% if students %}
+                <ul class="space-y-3 mt-4">
+                    {% for student in students %}
+                        <li class="flex items-center">
+                            <input type="checkbox" name="students" value="{{ student.id }}" 
+                                   class="h-4 w-4 text-blue-600 border-gray-300 rounded mr-3 focus:ring-2 focus:ring-blue-500">
+                            <span class="text-gray-800">{{ student.name }} ({{ student.rollno }})</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-gray-600 mt-2">No unassigned students available.</p>
+            {% endif %}
+        </div>
 
+        <!-- Submit Button -->
+        <div>
+            <button type="submit" 
+                    class="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Assign Selected Students
+            </button>
+        </div>
+    </form>
+</div>
 {% endblock %}
