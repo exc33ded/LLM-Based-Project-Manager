@@ -1,23 +1,31 @@
 {% extends "miniadmin/base_miniadmin.html" %}
 
 {% block content %}
-<h1>Projects</h1>
-<table>
-    <thead>
-        <tr>
-            <th>Student Name</th>
-            <th>Number of Projects</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for user, project_count in student_projects %}
-        <tr>
-            <td>{{ user.name }}</td>
-            <td>{{ project_count }}</td>
-            <td><a href="{{ url_for('miniadmin_routes.view_student_projects', user_id=user.id) }}">View Projects</a></td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endblock %}
+<div class="ml-4 mr-4">
+    <h1 class="text-4xl font-extrabold dark:text-black">Projects</h1>
+    <div class="w-full p-4 text-center bg-white border border-gray-200 rounded-lg shadow sm:p-8">
+        <table id="example" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Number of Projects</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user, project_count in student_projects %}
+                <tr>
+                    <td class='text-sky-800'>{{ user.name }}</td>
+                    <td>{{ project_count }}</td>
+                    <td><a href="{{ url_for('miniadmin_routes.view_student_projects', user_id=user.id) }}"  class="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-500">View
+                            Projects</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <script>
+            $(document).ready(function() {
+                $('#example').DataTable();
+            });
+        </script>
+        {% endblock %}

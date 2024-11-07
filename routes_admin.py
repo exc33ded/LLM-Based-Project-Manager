@@ -27,15 +27,78 @@ def admin_login():
             flash('Invalid email or password', 'danger')
     return render_template('admin_login.html')
 
-@admin_routes.route('/admin/dashboard')
+
+@admin_routes.route('/admin/dashboard', methods=['GET', 'POST'])
 @login_required
 def admin_dashboard():
     if current_user.role != 'admin':
         flash('Unauthorized access', 'danger')
         return redirect(url_for('auth_routes.login'))
+
+    # Fetch general statistics
+    assigned_students_count = User.query.filter(User.miniadmin_id != None).count()
+    unassigned_students_count = User.query.filter(User.miniadmin_id == None, User.role == 'student').count()
+    unverified_students_count = User.query.filter_by(role='student', is_verified=False).count()
+    unverified_instructors_count = User.query.filter_by(role='instructor', is_verified=False).count()
+
+    # Count of tasks by status
+    backlog_tasks_count = Task.query.filter_by(status='Backlog').count()
+    in_progress_tasks_count = Task.query.filter_by(status='In Progress').count()
+    progressed_tasks_count = Task.query.filter_by(status='Progressed').count()  # Added Progressed Tasks
+    completed_tasks_count = Task.query.filter_by(status='Finished').count()
+
+    # Fetch a list of all projects for task categorization
+    projects = Project.query.all()
+
+    # If the admin selects a project, get the task count for that project
+    selected_project = None
+    project_backlog = 0
+    project_in_progress = 0
+    project_progressed = 0
+    project_finished = 0
+
+    if request.method == 'POST':
+        project_id = request.form.get('project_id')
+        if project_id:
+            selected_project = Project.query.get_or_404(project_id)
+            tasks = Task.query.filter_by(project_id=project_id).all()
+            for task in tasks:
+                if task.status == 'Backlog':
+                    project_backlog += 1
+                elif task.status == 'In Progress':
+                    project_in_progress += 1
+                elif task.status == 'Progressed':
+                    project_progressed += 1
+                elif task.status == 'Finished':
+                    project_finished += 1
+
+    return render_template(
+        'admin/admin_dashboard.html',
+        assigned_students_count=assigned_students_count,
+        unassigned_students_count=unassigned_students_count,
+        unverified_students_count=unverified_students_count,
+        unverified_instructors_count=unverified_instructors_count,
+        backlog_tasks_count=backlog_tasks_count,
+        in_progress_tasks_count=in_progress_tasks_count,
+        progressed_tasks_count=progressed_tasks_count,  
+        completed_tasks_count=completed_tasks_count,
+        projects=projects,
+        selected_project=selected_project,
+        project_backlog=project_backlog,
+        project_in_progress=project_in_progress,
+        project_progressed=project_progressed,
+        project_finished=project_finished
+    )
+
+@admin_routes.route('/admin/assignments')
+@login_required
+def admin_assignment_overview():
+    if current_user.role != 'admin':
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('auth_routes.login'))
     mini_admins = User.query.filter_by(role='mini-admin').all()
     
-    return render_template('admin/admin_dashboard.html', mini_admins=mini_admins)
+    return render_template('admin/admin_assignments.html', mini_admins=mini_admins)
 
 @admin_routes.route('/admin/verify_users')
 @login_required
@@ -165,6 +228,9 @@ def view_project_tasks(project_id):
         flash('Unauthorized access', 'danger')
         return redirect(url_for('auth_routes.login'))
 
+    user_id = request.args.get('user_id')
+    user = User.query.get_or_404(user_id) if user_id else None
+    
     project = Project.query.get_or_404(project_id)
     tasks = Task.query.filter_by(project_id=project.id).all()
 
@@ -177,11 +243,11 @@ def view_project_tasks(project_id):
     progressed_tasks = [task for task in tasks if task.status == 'Progressed']
     finished_tasks = [task for task in tasks if task.status == 'Finished']
 
-    return render_template('admin/view_project_tasks.html', project=project, 
+    return render_template('admin/view_project_tasks.html', user=user, project=project, 
                            backlog_tasks=backlog_tasks, 
                            in_progress_tasks=in_progress_tasks, 
                            progressed_tasks=progressed_tasks, 
-                           finished_tasks=finished_tasks, referrer=request.referrer)
+                           finished_tasks=finished_tasks)
 
 @admin_routes.route('/admin/projects/tasks/move/<int:task_id>', methods=['POST'])
 @login_required
@@ -371,17 +437,3 @@ def unassign_all():
         flash('Invalid request!', 'danger')
 
     return redirect(url_for('admin_routes.admin_dashboard')) 
-
-@admin_routes.route('/admin/miniadmin_overview')
-@login_required
-def miniadmin_overview():
-    if current_user.role != 'admin':
-        flash('Access denied.', 'danger')
-        return redirect(url_for('auth_routes.login'))
-
-    mini_admins = User.query.filter_by(role='mini-admin').all()  
-
-    unassigned_students_count = User.query.filter_by(role='student', miniadmin_id=None).count()
-
-    return render_template('admin/miniadmin_overview.html', mini_admins=mini_admins, unassigned_students_count=unassigned_students_count)
-

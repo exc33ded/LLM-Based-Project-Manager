@@ -1,7 +1,62 @@
 {% extends "miniadmin/base_miniadmin.html" %}
 
 {% block content %}
-<h1>Mini-Admin Dashboard</h1>
+<div class="max-w-5xl mx-auto p-8">
+    <h1 class="text-4xl font-semibold text-gray-800 text-center mb-10">Mini-Admin Dashboard</h1>
+    
+    <!-- Assigned Students and Total Projects Section -->
+    <section class="bg-white p-6 rounded-lg shadow-lg mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Overview</h2>
+        <div class="grid grid-cols-2 gap-6">
+            <div class="bg-blue-100 p-6 rounded-lg text-center">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Assigned Students</h3>
+                <p class="text-2xl font-bold">{{ assigned_students_count }}</p>
+            </div>
+            <div class="bg-green-100 p-6 rounded-lg text-center">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Total Projects</h3>
+                <p class="text-2xl font-bold">{{ total_projects }}</p>
+            </div>
+        </div>
+    </section>
 
+    <!-- Task Status Overview Section with Project Filter -->
+    <section class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Task Status Overview</h2>
+        
+        <!-- Dropdown to select specific project -->
+        <form method="GET" action="{{ url_for('miniadmin_routes.miniadmin_dashboard') }}" class="mb-6">
+            <label for="project_id" class="text-lg font-semibold text-gray-700">Select Project:</label>
+            <select name="project_id" id="project_id" class="form-select block w-full mt-2 hover:bg-blue-100">
+                <option value="" {% if not request.args.get('project_id') %} selected {% endif %}>All Projects</option>
+                {% for student in assigned_students %}
+                    {% for project in student.projects %}
+                        <option value="{{ project.id }}" {% if project.id == request.args.get('project_id')|int %} selected {% endif %}>
+                            {{ project.title }}
+                        </option>
+                    {% endfor %}
+                {% endfor %}
+            </select>
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 mt-4 rounded-lg">Filter</button>
+        </form>
 
+        <div class="grid grid-cols-4 gap-6">
+            <div class="bg-red-100 p-6 rounded-lg text-center">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Backlog Tasks</h3>
+                <p class="text-2xl font-bold">{{ backlog_tasks_count }}</p>
+            </div>
+            <div class="bg-blue-100 p-6 rounded-lg text-center">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">In Progress Tasks</h3>
+                <p class="text-2xl font-bold">{{ in_progress_tasks_count }}</p>
+            </div>
+            <div class="bg-yellow-100 p-6 rounded-lg text-center">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Progressed Tasks</h3>
+                <p class="text-2xl font-bold">{{ progressed_tasks_count }}</p>
+            </div>
+            <div class="bg-green-100 p-6 rounded-lg text-center">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Completed Tasks</h3>
+                <p class="text-2xl font-bold">{{ finished_tasks_count }}</p>
+            </div>
+        </div>
+    </section>
+</div>
 {% endblock %}

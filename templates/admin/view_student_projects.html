@@ -24,7 +24,7 @@
                 {% for project in projects %}
                 <tr>
                     <td class="px-4 py-4 text-blue-600 font-medium">
-                        <a href="{{ url_for('admin_routes.view_project_tasks', project_id=project.id) }}" class="hover:underline">
+                        <a href="{{ url_for('admin_routes.view_project_tasks', project_id=project.id) }}?user_id={{ user.id }}" class="hover:underline">
                             {{ project.title }}
                         </a>
                     </td>

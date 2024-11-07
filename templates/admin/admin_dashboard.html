@@ -2,78 +2,115 @@
 
 {% block content %}
 
-<div class="max-w-5xl mx-auto p-8">
+<div class="max-w-6xl mx-auto p-8">
     <!-- Dashboard Header -->
     <h1 class="text-4xl font-semibold text-gray-800 text-center mb-10">Admin Dashboard</h1>
 
-    <!-- Mini-Admin Assignment Section -->
-    <section class="bg-white p-6 rounded-lg shadow-lg mb-8">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Mini-Admin Assignment</h2>
-        <form method="POST" action="{{ url_for('admin_routes.assign_students') }}">
+    <!-- Dashboard Overview -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Assigned Students -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Assigned Students</h3>
+            <p class="text-3xl font-semibold text-blue-600">{{ assigned_students_count }}</p>
+        </div>
 
-            <!-- Unassigned Students List -->
-            <h3 class="text-lg font-semibold text-gray-700 mb-4">Unassigned Students</h3>
-            <ul class="space-y-2 mb-6">
-                {% for student in students %}
-                    <li class="flex items-center">
-                        <input type="checkbox" name="students" value="{{ student.id }}" class="h-4 w-4 text-blue-600 border-gray-300 rounded mr-2">
-                        <span class="text-gray-700">{{ student.name }} ({{ student.rollno }})</span>
-                    </li>
-                {% endfor %}
-            </ul>
+        <!-- Unassigned Students -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Unassigned Students</h3>
+            <p class="text-3xl font-semibold text-red-600">{{ unassigned_students_count }}</p>
+        </div>
 
-            <!-- Assign Students Button -->
-            <button type="submit" 
-                    class="w-full md:w-auto py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                Assign Selected Students
-            </button>
-        </form>
-    </section>
+        <!-- Unverified Students -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Unverified Students</h3>
+            <p class="text-3xl font-semibold text-orange-600">{{ unverified_students_count }}</p>
+        </div>
 
-    <!-- Current Assignments Section -->
-    <section class="bg-white p-6 rounded-lg shadow-lg">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Current Assignments</h2>
-        
-        <!-- Assignments Table -->
-        <div class="overflow-x-auto">
-            <table id="example" class="display" style="width:100%">
-                <thead>
-                    <tr>
-                        <th>Mini-Admin</th>
-                        <th>Assigned Students</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for miniadmin in mini_admins %}
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="px-6 py-4 text-gray-800 font-medium">{{ miniadmin.name }}</td>
-                            <td class="px-6 py-4">
-                                <ul class="space-y-2">
-                                    {% for student in miniadmin.assigned_students %}
-                                        <li class="flex justify-between items-center bg-gray-50 p-2 rounded-md shadow">
-                                            <span class="text-gray-700">{{ student.name }} ({{ student.rollno }})</span>
-                                            <form method="POST" action="{{ url_for('admin_routes.unassign_student') }}">
-                                                <input type="hidden" name="student_id" value="{{ student.id }}">
-                                                <input type="hidden" name="miniadmin_id" value="{{ miniadmin.id }}">
-                                                <button type="submit" 
-                                                        class="text-red-600 hover:text-red-800 font-semibold text-sm focus:outline-none">
-                                                    Unassign
-                                                </button>
-                                            </form>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <!-- Unverified Instructors -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Unverified Instructors</h3>
+            <p class="text-3xl font-semibold text-orange-600">{{ unverified_instructors_count }}</p>
+        </div>
+
+        <!-- Backlog Tasks -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Backlog Tasks</h3>
+            <p class="text-3xl font-semibold text-yellow-600">{{ backlog_tasks_count }}</p>
+        </div>
+
+        <!-- In Progress Tasks -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">In Progress Tasks</h3>
+            <p class="text-3xl font-semibold text-blue-600">{{ in_progress_tasks_count }}</p>
+        </div>
+
+        <!-- Progressed Tasks -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Progressed Tasks</h3>
+            <p class="text-3xl font-semibold text-green-600">{{ progressed_tasks_count }}</p>
+        </div>
+
+        <!-- Completed Tasks -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Completed Tasks</h3>
+            <p class="text-3xl font-semibold text-green-600">{{ completed_tasks_count }}</p>
         </div>
     </section>
+
+    <!-- Project Selection for Task Categorization -->
+    <div class="mt-10">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Project Task Overview</h2>
+
+        <!-- Project Selection Form -->
+        <form method="POST" class="mb-6">
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <label for="project_id" class="text-lg font-semibold text-gray-700">Select Project:</label>
+
+                <!-- Add custom styling to make the dropdown visible -->
+                <select name="project_id" id="project_id"
+                    class="form-select block w-full mt-2 border-blue-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-blue-100">
+                    <option value="">Select a project</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" {% if selected_project and selected_project.id==project.id
+                        %}selected{% endif %}>
+                        {{ project.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <!-- Filter button styled appropriately -->
+                <button type="submit"
+                    class="bg-blue-500 text-white px-4 py-2 mt-4 rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    Filter
+                </button>
+            </div>
+        </form>
+
+        {% if selected_project %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Backlog Tasks</h3>
+                <p class="text-3xl font-semibold text-yellow-600">{{ project_backlog }}</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">In Progress Tasks</h3>
+                <p class="text-3xl font-semibold text-blue-600">{{ project_in_progress }}</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Progressed Tasks</h3>
+                <p class="text-3xl font-semibold text-green-600">{{ project_progressed }}</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Finished Tasks</h3>
+                <p class="text-3xl font-semibold text-green-600">{{ project_finished }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
 </div>
-<script>
-    $(document).ready(function() {
-        $('#example').DataTable();
-    });
-</script>
+</div>
+
 {% endblock %}

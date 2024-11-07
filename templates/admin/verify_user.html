@@ -1,18 +1,30 @@
 {% extends "admin/base_admin.html" %}
 
 {% block content %}
-Are you to verify the user?
-<form method="POST">
-    <label for="admin_comments">Admin Comments:</label>
-    <textarea name="admin_comments" rows="4" cols="50">{{ user.admin_comments }}</textarea>
+<div class="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg">
+    <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">User Verification</h1>
+    
+    <p class="text-center mb-6 text-lg">Are you sure you want to verify this user?</p>
 
-    <label for="verification_status">Verification Status:</label>
-    <select name="verification_status">
-        <option value="verify" {% if user.is_verified %}selected{% endif %}>Verify</option>
-        <option value="not_verify" {% if not user.is_verified %}selected{% endif %}>Do Not Verify</option>
-    </select>
+    <form method="POST" class="space-y-4">
+        <div>
+            <label for="admin_comments" class="block text-sm font-medium text-gray-700">Admin Comments:</label>
+            <textarea name="admin_comments" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">{{ user.admin_comments }}</textarea>
+        </div>
 
-    <button type="submit">Submit</button>
-</form>
+        <div>
+            <label for="verification_status" class="block text-sm font-medium text-gray-700">Verification Status:</label>
+            <select name="verification_status" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="verify" {% if user.is_verified %}selected{% endif %}>Verify</option>
+                <option value="not_verify" {% if not user.is_verified %}selected{% endif %}>Do Not Verify</option>
+            </select>
+        </div>
+
+        <div class="flex justify-center space-x-4">
+            <button type="submit" class="w-full sm:w-auto text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-6 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                Submit
+            </button>
+        </div>
+    </form>
+</div>
 {% endblock %}
-

@@ -1,0 +1,79 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+
+    <div class="max-w-6xl mx-auto p-8">
+
+       <!-- Mini-Admin Assignment Section -->
+       <section class="bg-white p-6 rounded-lg shadow-lg mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Mini-Admin Assignment</h2>
+        <form method="POST" action="{{ url_for('admin_routes.assign_students') }}">
+
+            <!-- Unassigned Students List -->
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">Unassigned Students</h3>
+            <ul class="space-y-2 mb-6">
+                {% for student in students %}
+                    <li class="flex items-center">
+                        <input type="checkbox" name="students" value="{{ student.id }}" class="h-4 w-4 text-blue-600 border-gray-300 rounded mr-2">
+                        <span class="text-gray-700">{{ student.name }} ({{ student.rollno }})</span>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <!-- Assign Students Button -->
+            <button type="submit" 
+                    class="w-full md:w-auto py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Assign Selected Students
+            </button>
+        </form>
+    </section>
+    
+    <!-- Current Assignments Section -->
+    <section class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Current Assignments</h2>
+        
+        <!-- Assignments Table -->
+        <div class="overflow-x-auto">
+            <table id="example" class="display" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Mini-Admin</th>
+                        <th>Assigned</th>
+                        <th>Assigned Students</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for miniadmin in mini_admins %}
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-6 py-4 text-gray-800 font-medium">{{ miniadmin.name }}</td>
+                            <td class="px-6 py-4 text-gray-800 font-medium">{{ miniadmin.assigned_students|length }}</td>
+                            <td class="px-6 py-4">
+                                <ul class="space-y-2">
+                                    {% for student in miniadmin.assigned_students %}
+                                        <li class="flex justify-between items-center bg-gray-50 p-2 rounded-md shadow">
+                                            <span class="text-gray-700">{{ student.name }} ({{ student.rollno }})</span>
+                                            <form method="POST" action="{{ url_for('admin_routes.unassign_student') }}">
+                                                <input type="hidden" name="student_id" value="{{ student.id }}">
+                                                <input type="hidden" name="miniadmin_id" value="{{ miniadmin.id }}">
+                                                <button type="submit" 
+                                                        class="text-red-600 hover:text-red-800 font-semibold text-sm focus:outline-none">
+                                                    Unassign
+                                                </button>
+                                            </form>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+<script>
+    $(document).ready(function() {
+        $('#example').DataTable();
+    });
+</script>
+{% endblock %}

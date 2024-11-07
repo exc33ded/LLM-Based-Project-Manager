@@ -158,7 +158,7 @@
 <br>
 
 <a href="{{ url_for('admin_routes.add_task', project_id=project.id) }}" class="bg-green-600 text-white px-6 py-3 rounded-lg mt-4 hover:bg-green-700">Add New Task</a>
-<a href="{{ referrer }}" class="bg-green-600 text-white px-6 py-3 rounded-lg mt-4 hover:bg-green-700">Go Back</a>
+<a href="{{ url_for('admin_routes.view_student_projects', user_id=user.id) }}" class="bg-green-600 text-white px-6 py-3 rounded-lg mt-4 hover:bg-green-700">Go Back</a>
 
 </div>
 

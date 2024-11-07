@@ -7,13 +7,48 @@ from datetime import datetime
 
 miniadmin_routes = Blueprint('miniadmin_routes', __name__)
 
-@miniadmin_routes.route('/dashboard')
+@miniadmin_routes.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def miniadmin_dashboard():
     if current_user.role != 'mini-admin':
         flash('Access denied.', 'danger')
         return redirect(url_for('auth_routes.login'))
-    return render_template('miniadmin/miniadmin_dashboard.html')
+
+    # Get assigned students for the mini-admin
+    assigned_students = current_user.assigned_students
+    assigned_students_count = len(assigned_students)
+
+    # Get total projects assigned to mini-admin's students
+    total_projects = sum(len(student.projects) for student in assigned_students)
+
+    # Get the total tasks categorized by their status
+    backlog_tasks_count = Task.query.filter_by(status='Backlog').count()
+    in_progress_tasks_count = Task.query.filter_by(status='In Progress').count()
+    progressed_tasks_count = Task.query.filter_by(status='Progressed').count()
+    finished_tasks_count = Task.query.filter_by(status='Finished').count()
+
+    # If a specific project is selected, filter the tasks for that project
+    project_id = request.args.get('project_id', None)
+    if project_id:
+        project = Project.query.get_or_404(project_id)
+        tasks = Task.query.filter_by(project_id=project_id).all()
+
+        # Categorize tasks by status
+        backlog_tasks_count = len([task for task in tasks if task.status == 'Backlog'])
+        in_progress_tasks_count = len([task for task in tasks if task.status == 'In Progress'])
+        progressed_tasks_count = len([task for task in tasks if task.status == 'Progressed'])
+        finished_tasks_count = len([task for task in tasks if task.status == 'Finished'])
+
+    return render_template(
+        'miniadmin/miniadmin_dashboard.html',
+        assigned_students_count=assigned_students_count,
+        total_projects=total_projects,
+        backlog_tasks_count=backlog_tasks_count,
+        in_progress_tasks_count=in_progress_tasks_count,
+        progressed_tasks_count=progressed_tasks_count,
+        finished_tasks_count=finished_tasks_count,
+        assigned_students=assigned_students  # Send the list of assigned students
+    )
 
 # ------------------------------ Managing Project with Tasks for the students ----------------------------------
 
