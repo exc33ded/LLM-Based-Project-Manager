@@ -1,11 +1,82 @@
-
-
 {% extends "base.html" %}
 
 {% block content %}
+<div class="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 text-center">
+    <!-- Welcome Modal -->
+    <div id="welcome-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-lg w-full">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Welcome to Project Manager!</h2>
+            <p class="text-gray-600 mb-6">Start by exploring some features or signing in!</p>
+            <button onclick="closeModal()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                Let’s Go!
+            </button>
+        </div>
+    </div>
 
-<h1>Login</h1>
+    <!-- Main Content -->
+    <h1 class="text-5xl font-bold text-gray-800 mt-12">Welcome to Advanced Project Manager for AMU</h1>
+    <p class="text-lg text-gray-600 mt-4 max-w-lg">
+        Organize, track, and manage your projects with ease. Explore key features below or get started.
+    </p>
 
-This is the home page where the user will come at comingto website
+    <!-- Interactive Stats -->
+    <div class="flex space-x-10 mt-12 text-center">
+        <div>
+            <h3 class="text-4xl font-bold text-gray-800"><span id="projects-completed" data-target="1200">0</span>+</h3>
+            <p class="text-gray-600">Projects Completed</p>
+        </div>
+        <div>
+            <h3 class="text-4xl font-bold text-gray-800"><span id="active-users" data-target="500">0</span>+</h3>
+            <p class="text-gray-600">Active Users</p>
+        </div>
+    </div>
 
+    <!-- Features Section with Hover Effects -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12 max-w-4xl">
+        <div class="p-6 bg-white rounded-lg shadow-lg transform hover:scale-105 transition duration-300">
+            <h2 class="text-xl font-bold text-gray-700">Track Your Progress</h2>
+            <p class="text-gray-600 mt-2">Visual timelines and milestones keep your projects on track.</p>
+        </div>
+        <div class="p-6 bg-white rounded-lg shadow-lg transform hover:scale-105 transition duration-300">
+            <h2 class="text-xl font-bold text-gray-700">Collaborate with Teams</h2>
+            <p class="text-gray-600 mt-2">Team messaging, task assignments, and file sharing.</p>
+        </div>
+        <div class="p-6 bg-white rounded-lg shadow-lg transform hover:scale-105 transition duration-300">
+            <h2 class="text-xl font-bold text-gray-700">Detailed Analytics</h2>
+            <p class="text-gray-600 mt-2">Monitor project metrics with detailed reports.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Show welcome modal on page load
+    window.onload = function() {
+        document.getElementById('welcome-modal').classList.remove('hidden');
+    };
+
+    function closeModal() {
+        document.getElementById('welcome-modal').classList.add('hidden');
+    }
+
+    // Counter Animation for Stats
+    function animateCounters() {
+        const counters = document.querySelectorAll('[id^="projects-completed"], [id^="active-users"]');
+        counters.forEach(counter => {
+            const updateCount = () => {
+                const target = +counter.getAttribute('data-target');
+                const count = +counter.innerText;
+                const increment = target / 200;
+
+                if (count < target) {
+                    counter.innerText = Math.ceil(count + increment);
+                    setTimeout(updateCount, 20);
+                } else {
+                    counter.innerText = target;
+                }
+            };
+            updateCount();
+        });
+    }
+    animateCounters();
+</script>
 {% endblock %}
