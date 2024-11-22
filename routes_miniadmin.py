@@ -91,6 +91,7 @@ def view_project_tasks(project_id):
         return redirect(url_for('auth_routes.login'))
 
     user_id = request.args.get('user_id')
+    print(user_id)
     user = User.query.get_or_404(user_id) if user_id else None
 
     project = Project.query.get_or_404(project_id)
