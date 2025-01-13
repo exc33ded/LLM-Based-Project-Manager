@@ -3,3 +3,4 @@ Documentation/
 /instance
 /static/uploads/id/
 /static/uploads/synopsis/
+.env

@@ -28,6 +28,11 @@
             <div class="bg-white p-4 rounded-lg shadow-2xl">
                 <strong class="text-lg">{{ task.title }}</strong>
                 <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+
+                <div class="summary-section">
+                    <h4 class="font-semibold text-gray-700 mb-2">Summary:</h4>
+                    <p class="text-sm text-gray-600">{{ task.description }}</p>
+                </div>
                 <div class="mt-4 flex justify-between items-center">
                     <form action="{{ url_for('student_routes.delete_task', task_id=task.id) }}" method="POST"
                         style="display:inline;">
@@ -61,6 +66,11 @@
             <div class="bg-white p-4 rounded-lg shadow-2xl">
                 <strong class="text-lg">{{ task.title }}</strong>
                 <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+
+                <div class="summary-section">
+                    <h4 class="font-semibold text-gray-700 mb-2">Summary:</h4>
+                    <p class="text-sm text-gray-600">{{ task.description }}</p>
+                </div>
                 <div class="mt-4 flex justify-between items-center">
                     <form action="{{ url_for('student_routes.delete_task', task_id=task.id) }}" method="POST"
                         style="display:inline;">
@@ -94,6 +104,11 @@
             <div class="bg-white p-4 rounded-lg shadow-2xl">
                 <strong class="text-lg">{{ task.title }}</strong>
                 <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+
+                <div class="summary-section">
+                    <h4 class="font-semibold text-gray-700 mb-2">Summary:</h4>
+                    <p class="text-sm text-gray-600">{{ task.description }}</p>
+                </div>
                 <div class="mt-4 flex justify-between items-center">
                     <form action="{{ url_for('student_routes.delete_task', task_id=task.id) }}" method="POST"
                         style="display:inline;">
@@ -127,6 +142,11 @@
             <div class="bg-white p-4 rounded-lg shadow-2xl">
                 <strong class="text-lg">{{ task.title }}</strong>
                 <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+
+                <div class="summary-section">
+                    <h4 class="font-semibold text-gray-700 mb-2">Summary:</h4>
+                    <p class="text-sm text-gray-600">{{ task.description }}</p>
+                </div>
                 <div class="mt-4 flex justify-between items-center">
                     <form action="{{ url_for('student_routes.delete_task', task_id=task.id) }}" method="POST"
                         style="display:inline;">
@@ -143,33 +163,59 @@
     <br>
     <a href="{{ url_for('student_routes.add_task', project_id=project.id) }}"
         class="bg-green-600 text-white px-6 py-3 rounded-lg mt-4 hover:bg-green-700">Add New Task</a>
-        <a href="{{ url_for('student_routes.view_projects', user_id=user.id) }}"
+    <a href="{{ url_for('student_routes.view_projects', user_id=user.id) }}"
         class="bg-green-600 text-white px-6 py-3 rounded-lg mt-4 hover:bg-green-700">Go Back</a>
     <script>
         function showCategory(category) {
-            // Hide all categories
             const categories = document.querySelectorAll('.task-category');
             categories.forEach(category => category.classList.add('hidden'));
-
-            // Show the selected category
             const activeCategory = document.getElementById(category);
             if (activeCategory) {
                 activeCategory.classList.remove('hidden');
             }
-
-            // Reset tab styles
             const tabs = document.querySelectorAll('button');
             tabs.forEach(tab => tab.classList.remove('bg-blue-700'));
-
-            // Highlight the active tab
             const activeTab = document.getElementById(category + 'Tab');
             if (activeTab) {
                 activeTab.classList.add('bg-blue-700');
             }
         }
 
-        // Default category to show (Backlog)
         showCategory('backlog');
     </script>
 </div>
+
+<style>
+    .task-category .bg-white {
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        /* Optional: Indicates hoverable area */
+    }
+
+    .task-category .summary-section {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.95);
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        pointer-events: none;
+        /* Prevents blocking interaction */
+        z-index: 10;
+        padding: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .task-category .bg-white:hover .summary-section {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+        /* Enable interaction only when hovered */
+    }
+</style>
+
 {% endblock %}

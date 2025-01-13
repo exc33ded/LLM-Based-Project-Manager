@@ -12,19 +12,18 @@ class User(db.Model, UserMixin):
     rollno = db.Column(db.String(6), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
     role = db.Column(db.String(10), nullable=False, default='student')  # 'admin', 'mini-admin', 'student'
-    is_verified = db.Column(db.Boolean, default=False)  # Verified by admin
-    id_card = db.Column(db.String(200), nullable=False)  # Path to uploaded ID card PDF
+    is_verified = db.Column(db.Boolean, default=False)
+    id_card = db.Column(db.String(200), nullable=False)
     date_registered = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
-    admin_comments = db.Column(db.String(500))  # Optional comments from admin during verification
+    admin_comments = db.Column(db.String(500))
+    course = db.Column(db.String(50), nullable=True) 
 
     projects = db.relationship('Project', backref='owner', lazy=True)
-    miniadmin_id = db.Column(db.Integer, db.ForeignKey('users.id'))  
+    miniadmin_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     assigned_students = db.relationship('User', backref=db.backref('miniadmin', remote_side=[id]), lazy=True)
 
     def __repr__(self):
         return f"User('{self.name}', '{self.email}', '{self.role}', Verified: {self.is_verified})"
-
 
 class Project(db.Model):
     __tablename__ = 'projects'
@@ -35,8 +34,12 @@ class Project(db.Model):
     synopsis_filename = db.Column(db.String(200), nullable=False)  # Path to synopsis PDF
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Link to student or mini-admin
 
+    summary = db.Column(db.Text, nullable=True)  # AI-generated project summary
+    category = db.Column(db.String(50), nullable=True) 
+
     tasks = db.relationship('Task', backref='project', cascade="all, delete", lazy=True)  # Tasks within the project
-    
+    long_term_memory = db.relationship('LongTermMemory', backref='project', lazy=True)
+
     def __repr__(self):
         return f"Project('{self.title}', '{self.start_date}')"
 
@@ -53,3 +56,16 @@ class Task(db.Model):
 
     def __repr__(self):
         return f"Task('{self.title}', '{self.status}', '{self.due_date}')"
+
+
+class LongTermMemory(db.Model):
+    __tablename__ = 'long_term_memory'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)  # Link to project
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Link to user
+    chat_content = db.Column(db.Text, nullable=False)  # Chat response or conversation
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)  # Timestamp for when the chat was stored
+
+    def __repr__(self):
+        return f"LongTermMemory(Project ID: {self.project_id}, User ID: {self.user_id}, Timestamp: {self.timestamp})"

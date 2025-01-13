@@ -4,7 +4,7 @@
 
 <div class="mx-auto p-8">
     <!-- Header -->
-    <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">Projects Overview</h1>
+    <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">Verify User</h1>
     
     <!-- Projects Table -->
     <div class="bg-white p-6 rounded-lg shadow-lg">
@@ -15,6 +15,7 @@
                     <th>Email</th>
                     <th>Roll No</th>
                     <th>Role Taken</th>
+                    <th>Course</th>
                     <th>View Document</th>
                     <th>Action</th>
                 </tr>
@@ -26,6 +27,7 @@
                     <td>{{ user.email }}</td>
                     <td>{{ user.rollno }}</td>
                     <td>{{ user.role }}</td>
+                    <td>{{ user.course }}</td>
                     <td><a href="{{ url_for('static', filename='uploads/id/' + user.id_card) }}" target="_blank"
                             class="hover:underline text-blue-600">View
                             Document</a></td>

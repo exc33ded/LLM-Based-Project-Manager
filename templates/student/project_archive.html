@@ -9,8 +9,10 @@
             <thead>
                 <tr>
                     <th>Student Name</th>
+                    <th>Course</th>
                     <th>Project Name</th>
                     <th>Roll No</th>
+                    <th>Category</th>
                     <th>Synopsis</th>
                 </tr>
             </thead>
@@ -18,8 +20,20 @@
                 {% for project in projects %}
                 <tr>
                     <td>{{ project.owner.name }}</td>
+                    <td>{{ project.owner.course }}</td>
                     <td>{{ project.title }}</td>
                     <td>{{ project.owner.rollno }}</td>
+                    <td>
+                        {% set categories = project.category.split(', ') %}
+                        {% set colors = ['#FFCDD2', '#F8BBD0', '#E1BEE7', '#D1C4E9', '#C5CAE9', '#BBDEFB', '#B3E5FC', '#B2EBF2', '#B2DFDB', '#C8E6C9', '#DCEDC8', '#F0F4C3'] %}
+                        <div class="flex flex-wrap gap-2">
+                            {% for category in categories %}
+                                <span class="category-tag px-3 py-1 rounded-full" style="background-color: {{ colors[loop.index0 % colors|length] }};">
+                                    {{ category }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </td>
                     <td><a href="{{ url_for('static', filename='uploads/synopsis/' + project.synopsis_filename) }}"
                             target="_blank"
                             class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">View

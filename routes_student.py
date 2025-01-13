@@ -5,6 +5,9 @@ from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
 import random
+from utils.pdf_summarize import analyze_synopsis
+from utils.task_generation import generate_dynamic_coding_tasks
+import json
 
 student_routes = Blueprint('student_routes', __name__)
 
@@ -92,21 +95,62 @@ def add_project():
     if current_user.role != 'student':
         flash('Unauthorized access', 'danger')
         return redirect(url_for('auth_routes.login'))
-    
+
     if request.method == 'POST':
         title = request.form['title']
         start_date_str = request.form['start_date']
         start_date = datetime.strptime(start_date_str, '%Y-%m-%d') 
         synopsis = request.files['synopsis']
-        num = random.randint(1, 10000)
 
+        # Generate a unique filename for the uploaded synopsis
+        num = random.randint(1, 10000)
         unique_synopsis_filename = f"{current_user.name}_{current_user.rollno}__{num}__{title}_synopsis.{synopsis.filename.split('.')[-1]}"
         synopsis_filename = secure_filename(unique_synopsis_filename)
-        synopsis.save(os.path.join(UPLOAD_FOLDER, synopsis_filename))
+        synopsis_path = os.path.join(UPLOAD_FOLDER, synopsis_filename)
+        synopsis.save(synopsis_path)
 
-        project = Project(title=title, start_date=start_date, synopsis_filename=synopsis_filename, student_id=current_user.id)
+        # Analyze the synopsis using the AI script
+        ai_result = analyze_synopsis(synopsis_path)
+
+        # Handle errors during AI analysis
+        if "error" in ai_result:
+            flash(ai_result["error"], "danger")
+            return redirect(url_for('student_routes.add_project'))
+
+        # Parse AI analysis result
+        ai_data = json.loads(ai_result)
+        summary = ai_data.get("summary", "No summary provided.")
+        categories = ai_data.get("categories", ["Other"])
+        category = ", ".join(categories)
+
+        # Save the project details in the database
+        project = Project(
+            title=title,
+            start_date=start_date,
+            synopsis_filename=synopsis_filename,
+            student_id=current_user.id,
+            summary=summary,
+            category=category
+        )
         db.session.add(project)
         db.session.commit()
+
+        # Generate tasks based on the summary
+        try:
+            task_data = json.loads(generate_dynamic_coding_tasks(summary))
+            for task_title, task_details in task_data.items():
+                new_task = Task(
+                    title=task_title,
+                    description=task_details["Task Description"],
+                    due_date=datetime.strptime(task_details["Date"], '%Y-%m-%d'),
+                    status='In Progress',
+                    project_id=project.id
+                )
+                db.session.add(new_task)
+            db.session.commit()
+        except ValueError or Exception as e:
+            flash(f"Task generation failed: {e}", "danger")
+            return redirect(url_for('student_routes.view_projects'))
 
         flash("Project added successfully!", "success")
         return redirect(url_for('student_routes.view_projects'))
@@ -119,30 +163,52 @@ def edit_project(project_id):
     if current_user.role != 'student':
         flash('Unauthorized access', 'danger')
         return redirect(url_for('auth_routes.login'))
+    
     project = Project.query.get_or_404(project_id)
 
     if project.student_id != current_user.id:
         flash('Unauthorized to edit this project', 'danger')
         return redirect(url_for('student_routes.view_projects'))
+    
+    category_colors = ['#FFCDD2', '#F8BBD0', '#E1BEE7', '#D1C4E9', '#C5CAE9', '#BBDEFB', '#B3E5FC', '#B2EBF2', '#B2DFDB', '#C8E6C9', '#DCEDC8', '#F0F4C3']
 
     if request.method == 'POST':
         title = request.form['title']
         start_date_str = request.form['start_date']
-        start_date = datetime.strptime(start_date_str, '%Y-%m-%d') 
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
         synopsis = request.files.get('synopsis')
-        if synopsis:
-            synopsis_filename = secure_filename(synopsis.filename)
-            synopsis.save(os.path.join(UPLOAD_FOLDER, synopsis_filename))
-            project.synopsis_filename = synopsis_filename
-
+        
+        # Update title and start date
         project.title = title
         project.start_date = start_date
         
+        # Get the updated categories from the hidden input
+        updated_categories = request.form.get('categories', '')  # Capturing the categories
+        project.category = updated_categories  # Update the categories field with the new list
+        
+        # If a new synopsis is uploaded
+        if synopsis:
+            unique_synopsis_filename = secure_filename(f"{current_user.name}_{current_user.rollno}_{title}_synopsis.{synopsis.filename.split('.')[-1]}")
+            synopsis_path = os.path.join(UPLOAD_FOLDER, unique_synopsis_filename)
+            synopsis.save(synopsis_path)
+            project.synopsis_filename = unique_synopsis_filename
+            
+            # Analyze the new synopsis
+            analysis_result = analyze_synopsis(synopsis_path)
+            
+            if "error" not in analysis_result:
+                analysis_data = json.loads(analysis_result)
+                project.summary = analysis_data.get('summary', '')
+                project.category = ", ".join(analysis_data.get('categories', []))
+            else:
+                flash("AI analysis failed: " + analysis_result['error'], "warning")
+
         db.session.commit()
         flash("Project updated successfully!", "success")
         return redirect(url_for('student_routes.view_projects'))
 
-    return render_template('student/edit_project.html', project=project)
+    return render_template('student/edit_project.html', project=project, category_colors=category_colors)
+
 
 @student_routes.route('/student/projects/delete/<int:project_id>', methods=['POST'])
 @login_required

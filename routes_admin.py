@@ -5,8 +5,11 @@ from flask_login import login_user, login_required, current_user, logout_user
 from werkzeug.security import check_password_hash
 from datetime import datetime
 import random
+from utils.pdf_summarize import analyze_synopsis
+from utils.task_generation import generate_dynamic_coding_tasks
 from werkzeug.utils import secure_filename
 import os
+import json
 
 UPLOAD_FOLDER = 'static/uploads/synopsis'
 
@@ -180,15 +183,111 @@ def add_project(user_id):
         synopsis_filename = secure_filename(unique_synopsis_filename)
         synopsis.save(os.path.join(UPLOAD_FOLDER, synopsis_filename))
 
-        new_project = Project(title=title, start_date=start_date, synopsis_filename=synopsis_filename, student_id=user.id)
+        # Analyze the synopsis using AI
+        ai_result = analyze_synopsis(os.path.join(UPLOAD_FOLDER, synopsis_filename))
+
+        # Handle errors during AI analysis
+        if "error" in ai_result:
+            flash(ai_result["error"], "danger")
+            return redirect(url_for('admin_routes.add_project', user_id=user.id))
+
+        # Parse AI analysis result
+        ai_data = json.loads(ai_result)
+        summary = ai_data.get("summary", "No summary provided.")
+        categories = ai_data.get("categories", ["Other"])
+        category = ", ".join(categories)
+
+        # Create and save the project
+        new_project = Project(
+            title=title, 
+            start_date=start_date, 
+            synopsis_filename=synopsis_filename, 
+            student_id=user.id, 
+            summary=summary,
+            category=category
+        )
         db.session.add(new_project)
         db.session.commit()
 
-        flash("Project added successfully!", "success")
+        # Generate tasks based on the summary
+        try:
+            task_data = json.loads(generate_dynamic_coding_tasks(summary))
+            for task_title, task_details in task_data.items():
+                new_task = Task(
+                    title=task_title,
+                    description=task_details["Task Description"],
+                    due_date=datetime.strptime(task_details["Date"], '%Y-%m-%d'),
+                    status='In Progress',
+                    project_id=new_project.id
+                )
+                db.session.add(new_task)
+            db.session.commit()
+        except ValueError or Exception as e:
+            flash(f"Task generation failed: {e}", "danger")
+            return redirect(url_for('admin_routes.view_student_projects', user_id=user.id))
 
+        flash("Project added successfully!", "success")
         return redirect(url_for('admin_routes.view_student_projects', user_id=user.id))
 
     return render_template('admin/create_project.html', user=user)
+
+@admin_routes.route('/admin/projects/edit/<int:project_id>', methods=['GET', 'POST'])
+@login_required
+def edit_project(project_id):
+    if current_user.role != 'admin':
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('auth_routes.login'))
+
+    project = Project.query.get_or_404(project_id)
+
+    if not project:
+        flash('Project not found', 'danger')
+        return redirect(url_for('admin_routes.view_projects'))
+
+    category_colors = ['#FFCDD2', '#F8BBD0', '#E1BEE7', '#D1C4E9', '#C5CAE9', '#BBDEFB', '#B3E5FC', '#B2EBF2', '#B2DFDB', '#C8E6C9', '#DCEDC8', '#F0F4C3']
+
+    if request.method == 'POST':
+        title = request.form['title']
+        start_date_str = request.form['start_date']
+
+        start_date = project.start_date
+        
+        if start_date_str:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+
+        synopsis = request.files.get('synopsis')
+
+        # Update title and start date
+        project.title = title
+        project.start_date = start_date
+
+        # Get the updated categories from the hidden input
+        updated_categories = request.form.get('categories', '')
+        project.category = updated_categories
+
+        # If a new synopsis is uploaded
+        if synopsis:
+            unique_synopsis_filename = secure_filename(f"{project.id}_{title}_synopsis.{synopsis.filename.split('.')[-1]}")
+            synopsis_path = os.path.join(UPLOAD_FOLDER, unique_synopsis_filename)
+            synopsis.save(synopsis_path)
+            project.synopsis_filename = unique_synopsis_filename
+
+            # Analyze the new synopsis
+            analysis_result = analyze_synopsis(synopsis_path)
+
+            if "error" not in analysis_result:
+                analysis_data = json.loads(analysis_result)
+                project.summary = analysis_data.get('summary', '')
+                project.category = ", ".join(analysis_data.get('categories', []))
+            else:
+                flash("AI analysis failed: " + analysis_result['error'], "warning")
+
+        db.session.commit()
+        flash("Project updated successfully!", "success")
+        return redirect(url_for('admin_routes.view_projects'))
+
+    return render_template('admin/edit_project.html', project=project, category_colors=category_colors)
+
 
 def check_task_status(task):
     if task.due_date.date() < datetime.now().date():

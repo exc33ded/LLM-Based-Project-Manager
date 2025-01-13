@@ -20,6 +20,7 @@ def register():
         rollno = request.form['rollno']
         password = request.form['password']
         role = request.form['role']
+        course = request.form.get('course') if role == 'student' else None
 
         existing_user_by_email = User.query.filter_by(email=email).first()
         existing_user_by_rollno = User.query.filter_by(rollno=rollno).first()
@@ -44,6 +45,7 @@ def register():
             rollno=rollno, 
             password=hashed_password, 
             role=role,
+            course=course, 
             id_card=id_card_filename
         )
 
