@@ -2,12 +2,12 @@ import os
 import json
 import random
 from datetime import datetime, timedelta
-from openai import OpenAI
+from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
 
-api_key = os.environ.get("OPENAI_API_KEY")
+api_key = os.environ.get("GROQ_API_KEY")
 
 def generate_dynamic_coding_tasks(summary):
     """
@@ -19,9 +19,8 @@ def generate_dynamic_coding_tasks(summary):
     Returns:
         dict: JSON object with task titles, descriptions, and sequential dates.
     """
-    client = OpenAI(
-  base_url = "https://integrate.api.nvidia.com/v1",
-  api_key = ""
+    client = Groq(
+    api_key=os.environ.get("GROQ_API_KEY"),
 )
 
     # Define the base date as today's date
@@ -57,15 +56,17 @@ def generate_dynamic_coding_tasks(summary):
     }}
     """
 
-    # OpenAI API call
+    # API call
     completion = client.chat.completions.create(
-        model="nvidia/llama-3.1-nemotron-70b-instruct",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.5,
-        top_p=1,
-        max_tokens=1024,
-        stream=True
-    )
+    messages=[
+        {
+            "role": "user",
+            "content": f"{prompt}",
+        }
+    ],
+    model="llama-3.3-70b-versatile",
+    stream=True,
+)
 
     # Collect the response
     tasks_json = ""

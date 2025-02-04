@@ -1,0 +1,31 @@
+{% extends "student/base_students.html" %}
+
+{% block content %}
+<div class="ml-4 mr-4">
+    <h1 class="text-4xl font-extrabold dark:text-black">Assigned Projects</h1>
+    <div class="w-full p-4 text-center bg-white border border-gray-200 rounded-lg shadow sm:p-8">
+        <table id="example" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Project Name</th>
+                    <th>Number of Students</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project, student_count in projects %}
+                <tr>
+                    <td class='text-sky-400'><a href="{{ url_for('student_routes.view_assigned_tasks', project_id=project.id) }}">{{ project.title }}</a></td>
+                    <td>{{ student_count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script>
+        $(document).ready(function () {
+            $('#example').DataTable();
+        });
+    </script>
+    <br>
+</div>
+{% endblock %}

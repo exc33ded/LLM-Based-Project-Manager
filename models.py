@@ -22,6 +22,9 @@ class User(db.Model, UserMixin):
     miniadmin_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     assigned_students = db.relationship('User', backref=db.backref('miniadmin', remote_side=[id]), lazy=True)
 
+    # Relationship to MiniAdminProject
+    miniadmin_projects = db.relationship('MiniAdminProject', backref='miniadmin', lazy=True)
+
     def __repr__(self):
         return f"User('{self.name}', '{self.email}', '{self.role}', Verified: {self.is_verified})"
 
@@ -43,7 +46,6 @@ class Project(db.Model):
     def __repr__(self):
         return f"Project('{self.title}', '{self.start_date}')"
 
-
 class Task(db.Model):
     __tablename__ = 'tasks'
     
@@ -57,7 +59,6 @@ class Task(db.Model):
     def __repr__(self):
         return f"Task('{self.title}', '{self.status}', '{self.due_date}')"
 
-
 class LongTermMemory(db.Model):
     __tablename__ = 'long_term_memory'
     
@@ -69,3 +70,48 @@ class LongTermMemory(db.Model):
 
     def __repr__(self):
         return f"LongTermMemory(Project ID: {self.project_id}, User ID: {self.user_id}, Timestamp: {self.timestamp})"
+
+class MiniAdminProject(db.Model):
+    __tablename__ = 'miniadmin_projects'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    miniadmin_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Link to mini-admin
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    # Relationship to MiniAdminProjectTask
+    tasks = db.relationship('MiniAdminProjectTask', backref='miniadmin_project', cascade="all, delete", lazy=True)
+
+    # Add cascading delete on the relationship with MiniAdminProjectStudent
+    assigned_students = db.relationship('MiniAdminProjectStudent', backref='project', cascade="all, delete", lazy=True)
+
+    def __repr__(self):
+        return f"MiniAdminProject('{self.title}', '{self.miniadmin_id}', '{self.created_at}')"
+
+
+class MiniAdminProjectTask(db.Model):
+    __tablename__ = 'miniadmin_project_tasks'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False) 
+    due_date = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(20), nullable=False)  # 'To Be Progressed', 'In Progress', 'Completed'
+    miniadmin_project_id = db.Column(db.Integer, db.ForeignKey('miniadmin_projects.id'), nullable=False)
+
+    def __repr__(self):
+        return f"MiniAdminProjectTask('{self.title}', '{self.status}', '{self.due_date}')"
+
+
+class MiniAdminProjectStudent(db.Model):
+    __tablename__ = 'miniadmin_project_students'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('miniadmin_projects.id'), nullable=False)  # Link to mini-admin project
+    student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Link to student
+
+    student = db.relationship('User', backref='projects_assigned')
+
+    def __repr__(self):
+        return f"MiniAdminProjectStudent(Project ID: {self.project_id}, Student ID: {self.student_id})"

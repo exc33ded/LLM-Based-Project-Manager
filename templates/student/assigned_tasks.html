@@ -33,16 +33,7 @@
                     <h4 class="font-semibold text-gray-700 mb-2">Summary:</h4>
                     <p class="text-sm text-gray-600">{{ task.description }}</p>
                 </div>
-                <div class="buttons-container mt-4 flex justify-between items-center">
-                    <form action="{{ url_for('student_routes.delete_task', task_id=task.id) }}" method="POST"
-                        style="display:inline;">
-                        <button type="submit"
-                            class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700">Delete</button>
-                    </form>
-                    <a href="{{ url_for('student_routes.edit_task', task_id=task.id) }}"
-                        class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Edit</a>
-                </div>
-                <form action="{{ url_for('student_routes.change_task_status', task_id=task.id) }}" method="POST"
+                <form action="{{ url_for('student_routes.change_assigned_task_status', task_id=task.id) }}" method="POST"
                     class="mt-4">
                     <select name="status" onchange="this.form.submit()"
                         class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm">
@@ -71,16 +62,7 @@
                     <h4 class="font-semibold text-gray-700 mb-2">Summary:</h4>
                     <p class="text-sm text-gray-600">{{ task.description }}</p>
                 </div>
-                <div class="mt-4 flex justify-between items-center">
-                    <form action="{{ url_for('student_routes.delete_task', task_id=task.id) }}" method="POST"
-                        style="display:inline;">
-                        <button type="submit"
-                            class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700">Delete</button>
-                    </form>
-                    <a href="{{ url_for('student_routes.edit_task', task_id=task.id) }}"
-                        class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Edit</a>
-                </div>
-                <form action="{{ url_for('student_routes.change_task_status', task_id=task.id) }}" method="POST"
+                <form action="{{ url_for('student_routes.change_assigned_task_status', task_id=task.id) }}" method="POST"
                     class="mt-4">
                     <select name="status" onchange="this.form.submit()"
                         class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm">
@@ -109,16 +91,7 @@
                     <h4 class="font-semibold text-gray-700 mb-2">Summary:</h4>
                     <p class="text-sm text-gray-600">{{ task.description }}</p>
                 </div>
-                <div class="mt-4 flex justify-between items-center">
-                    <form action="{{ url_for('student_routes.delete_task', task_id=task.id) }}" method="POST"
-                        style="display:inline;">
-                        <button type="submit"
-                            class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700">Delete</button>
-                    </form>
-                    <a href="{{ url_for('student_routes.edit_task', task_id=task.id) }}"
-                        class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Edit</a>
-                </div>
-                <form action="{{ url_for('student_routes.change_task_status', task_id=task.id) }}" method="POST"
+                <form action="{{ url_for('student_routes.change_assigned_task_status', task_id=task.id) }}" method="POST"
                     class="mt-4">
                     <select name="status" onchange="this.form.submit()"
                         class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm">
@@ -147,24 +120,14 @@
                     <h4 class="font-semibold text-gray-700 mb-2">Summary:</h4>
                     <p class="text-sm text-gray-600">{{ task.description }}</p>
                 </div>
-                <div class="mt-4 flex justify-between items-center">
-                    <form action="{{ url_for('student_routes.delete_task', task_id=task.id) }}" method="POST"
-                        style="display:inline;">
-                        <button type="submit"
-                            class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700">Delete</button>
-                    </form>
-                    <a href="{{ url_for('student_routes.edit_task', task_id=task.id) }}"
-                        class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Edit</a>
-                </div>
             </div>
             {% endfor %}
         </div>
     </div>
-    <br>
-    <a href="{{ url_for('student_routes.add_task', project_id=project.id) }}"
-        class="bg-green-600 text-white px-6 py-3 rounded-lg mt-4 hover:bg-green-700">Add New Task</a>
-    <a href="{{ url_for('student_routes.view_projects', user_id=user.id) }}"
+    <br><br>
+    <a href="{{ url_for('student_routes.assigned_projects', user_id=user.id) }}"
         class="bg-green-600 text-white px-6 py-3 rounded-lg mt-4 hover:bg-green-700">Go Back</a>
+
     <script>
         function showCategory(category) {
             const categories = document.querySelectorAll('.task-category');

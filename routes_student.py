@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
-from models import Project, db, Task, User
+from models import Project, db, Task, User, MiniAdminProject, MiniAdminProjectTask, MiniAdminProjectStudent
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
@@ -14,13 +14,19 @@ student_routes = Blueprint('student_routes', __name__)
 UPLOAD_FOLDER = 'static/uploads/synopsis'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@student_routes.route('/student/dashboard', methods=['GET', 'POST'])
-@login_required
-def student_dashboard():
+def check_student_role(current_user):
     if current_user.role != 'student':
         flash('Unauthorized access', 'danger')
         return redirect(url_for('auth_routes.login'))
+    return None
 
+@student_routes.route('/student/dashboard', methods=['GET', 'POST'])
+@login_required
+def student_dashboard():
+    result = check_student_role(current_user)
+    if result:
+        return result
+    
     # Get the student's projects
     projects = Project.query.filter_by(student_id=current_user.id).all()
 
@@ -81,9 +87,9 @@ def student_dashboard():
 @student_routes.route('/student/projects')
 @login_required
 def view_projects():
-    if current_user.role != 'student':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
+    result = check_student_role(current_user)
+    if result:
+        return result
     
     user = User.query.get_or_404(current_user.id)
     projects = Project.query.filter_by(student_id=current_user.id).all()
@@ -92,9 +98,9 @@ def view_projects():
 @student_routes.route('/student/projects/add', methods=['GET', 'POST'])
 @login_required
 def add_project():
-    if current_user.role != 'student':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
+    result = check_student_role(current_user)
+    if result:
+        return result
 
     if request.method == 'POST':
         title = request.form['title']
@@ -160,10 +166,10 @@ def add_project():
 @student_routes.route('/student/projects/edit/<int:project_id>', methods=['GET', 'POST'])
 @login_required
 def edit_project(project_id):
-    if current_user.role != 'student':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
-    
+    result = check_student_role(current_user)
+    if result:
+        return result
+
     project = Project.query.get_or_404(project_id)
 
     if project.student_id != current_user.id:
@@ -213,9 +219,10 @@ def edit_project(project_id):
 @student_routes.route('/student/projects/delete/<int:project_id>', methods=['POST'])
 @login_required
 def delete_project(project_id):
-    if current_user.role != 'student':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
+    result = check_student_role(current_user)
+    if result:
+        return result
+    
     project = Project.query.get_or_404(project_id)
 
     if project.student_id != current_user.id:
@@ -230,9 +237,10 @@ def delete_project(project_id):
 @student_routes.route('/student/projects/archive')
 @login_required
 def project_archive():
-    if current_user.role != 'student':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
+    result = check_student_role(current_user)
+    if result:
+        return result
+    
     if not current_user.is_verified:
         flash("Only verified students can access the project archive.", "info")
         return redirect(url_for('student_routes.view_projects'))
@@ -357,3 +365,73 @@ def delete_task(task_id):
     db.session.commit()
     flash('Task deleted successfully!', 'success')
     return redirect(url_for('student_routes.view_tasks', project_id=project_id))
+
+# ------------------  Assigned Project Working  -----------------------------------
+@student_routes.route('/assigned-projects')
+@login_required
+def assigned_projects():
+    result = check_student_role(current_user)
+    if result:
+        return result
+    
+    projects = db.session.query(MiniAdminProject, db.func.count(MiniAdminProjectStudent.student_id).label('student_count'))\
+    .join(MiniAdminProjectStudent, MiniAdminProject.id == MiniAdminProjectStudent.project_id)\
+    .filter(MiniAdminProjectStudent.student_id == current_user.id)\
+    .group_by(MiniAdminProject.id).all()
+    
+    return render_template('student/assigned_projects.html', projects=projects)
+    
+@student_routes.route('/assigned-projects/<int:project_id>/tasks')
+@login_required
+def view_assigned_tasks(project_id):
+    project = MiniAdminProject.query.get_or_404(project_id)
+
+    if not MiniAdminProjectStudent.query.filter_by(student_id=current_user.id, project_id=project_id).first():
+        flash("You are not authorized to view this project's tasks.", 'danger')
+        return redirect(url_for('student_routes.assigned_projects'))
+
+    tasks = MiniAdminProjectTask.query.filter_by(miniadmin_project_id=project_id).all()
+
+    for task in tasks:
+        check_task_status(task)
+
+    backlog_tasks = MiniAdminProjectTask.query.filter_by(miniadmin_project_id=project_id, status='Backlog').all()
+    in_progress_tasks = MiniAdminProjectTask.query.filter_by(miniadmin_project_id=project_id, status='In Progress').all()
+    progressed_tasks = MiniAdminProjectTask.query.filter_by(miniadmin_project_id=project_id, status='Progressed').all()
+    finished_tasks = MiniAdminProjectTask.query.filter_by(miniadmin_project_id=project_id, status='Finished').all()
+
+    return render_template('student/assigned_tasks.html', project=project, user=current_user,
+                           backlog_tasks=backlog_tasks, in_progress_tasks=in_progress_tasks,
+                           progressed_tasks=progressed_tasks, finished_tasks=finished_tasks)
+
+@student_routes.route('/assigned-projects/task/<int:task_id>/change_status', methods=['POST'])
+@login_required
+def change_assigned_task_status(task_id):
+    task = MiniAdminProjectTask.query.get_or_404(task_id)
+    project_id = task.miniadmin_project_id
+    project = MiniAdminProject.query.get_or_404(project_id)
+
+    assigned_project = MiniAdminProjectStudent.query.filter_by(student_id=current_user.id, project_id=project.id).first()
+    
+    if not assigned_project:
+        flash("You are not authorized to change tasks in this project.", 'info')
+        return redirect(url_for('student_routes.assigned_projects'))
+
+    new_status = request.form['status']
+    task.status = new_status
+    db.session.commit()
+
+    flash(f"Task status updated to '{new_status}'", 'success')
+    return redirect(url_for('student_routes.view_assigned_tasks', project_id=project_id))
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,37 @@
+{% extends "miniadmin/base_miniadmin.html" %}
+
+{% block content %}
+<div class="max-w-lg mx-auto mt-8 p-6 bg-white rounded-lg shadow-lg">
+    <h1 class="text-3xl font-semibold text-gray-800 mb-6">Add New Task for Project: {{ project.name }}</h1>
+
+    <form method="POST" action="{{ url_for('miniadmin_routes.create_task_for_miniadmin_project', project_id=project.id) }}">
+        
+        <!-- Task Title -->
+        <div class="mb-4">
+            <label for="title" class="block text-sm font-medium text-gray-700">Task Title:</label>
+            <input type="text" id="title" name="title" required class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter task title">
+        </div>
+
+        <!-- Task Description -->
+        <div class="mb-4">
+            <label for="description" class="block text-sm font-medium text-gray-700">Task Description:</label>
+            <textarea id="description" name="description" rows="4" required class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter task description"></textarea>
+        </div>
+
+        <!-- Due Date -->
+        <div class="mb-4">
+            <label for="due_date" class="block text-sm font-medium text-gray-700">Due Date:</label>
+            <input type="date" id="due_date" name="due_date" required class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex justify-between items-center">
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Add Task</button>
+        </div>
+    </form>
+
+    <div class="mt-4">
+        <button onclick="history.back()" type="button" class="text-white bg-gray-700 hover:bg-gray-600 focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none">Back to Task List</button>
+    </div>
+</div>
+{% endblock %}

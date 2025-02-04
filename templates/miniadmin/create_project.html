@@ -1,0 +1,34 @@
+{% extends "miniadmin/base_miniadmin.html" %}
+
+{% block content %}
+<div class="max-w-lg mx-auto mt-8 p-6 bg-white rounded-lg shadow-lg">
+    <h1 class="text-3xl font-semibold text-gray-800 mb-6">Create Project</h1>
+
+    <form action="{{ url_for('miniadmin_routes.create_project') }}" method="POST">
+        <div class="mb-4">
+            <label for="project_name" class="block text-sm font-medium text-gray-700">Project Name:</label>
+            <input type="text" id="project_name" name="project_name" required class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+    
+        <div class="mb-4">
+            <label for="project_summary" class="block text-sm font-medium text-gray-700">Project Summary:</label>
+            <textarea id="project_summary" name="project_summary" rows="4" required class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+    
+        <div class="mb-4">
+            <label for="assigned_students" class="block text-sm font-medium text-gray-700">Assign Students:</label>
+            <select id="assigned_students" name="assigned_students" multiple class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for student in students %}
+                    <option value="{{ student.id }}">{{ student.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    
+        <div class="flex justify-between items-center">
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">Create Project</button>
+            <button type="button" onclick="history.back()" class="px-5 py-2.5 bg-gray-700 text-white rounded-lg">Back</button>
+        </div>
+    </form>
+    
+</div>
+{% endblock %}

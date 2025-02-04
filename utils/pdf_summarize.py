@@ -85,8 +85,8 @@ def analyze_synopsis(file_path):
         return {"error": f"An error occurred while analyzing the synopsis: {e}"}
 
 # Example usage
-# if __name__ == "__main__":
-#     file_path = r"E:\Projects\MINI3\Documentation\Advanced Project Manager for AMU - SRS.pdf"
-#     result = analyze_synopsis(file_path)
-#     print("Analysis Result (JSON):")
-#     print(result)
+if __name__ == "__main__":
+    file_path = r"E:\Projects\MINI3\Documentation\Advanced Project Manager for AMU - SRS.pdf"
+    result = analyze_synopsis(file_path)
+    print("Analysis Result (JSON):")
+    print(result)

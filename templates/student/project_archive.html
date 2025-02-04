@@ -19,6 +19,7 @@
             <tbody>
                 {% for project in projects %}
                 <tr>
+                    <!-- Access the owner (creator) of the project -->
                     <td>{{ project.owner.name }}</td>
                     <td>{{ project.owner.course }}</td>
                     <td>{{ project.title }}</td>

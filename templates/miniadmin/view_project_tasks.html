@@ -4,8 +4,8 @@
 <div class="mr-2 ml-4 mt-4 mb-4">
     <h2 class="text-3xl font-bold text-gray-800 mb-6">Tasks for Project: {{ project.title }}</h2>
 
-     <!-- Tabs for Task Categories -->
-     <div class="flex space-x-4 mb-6">
+    <!-- Tabs for Task Categories -->
+    <div class="flex space-x-4 mb-6">
         <button id="backlogTab"
             class="bg-transparent hover:bg-red-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded"
             onclick="showCategory('backlog')">Backlog</button>
@@ -152,36 +152,86 @@
         </div>
     </div>
     <br>
-    <a href="{{ url_for('miniadmin_routes.add_task', project_id=project.id) }}" class="bg-green-600 text-white px-6 py-3 rounded-lg mt-4 hover:bg-green-700">Add New Task</a>
+    <a href="{{ url_for('miniadmin_routes.add_task', project_id=project.id) }}"
+        class="bg-green-600 text-white px-6 py-3 rounded-lg mt-4 hover:bg-green-700">Add New Task</a>
     <br>
     <br>
     <div class="text-left">
-        <button onclick="history.back()" class="text-white bg-gray-700 hover:bg-gray-300 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-200 focus:outline-none dark:focus:ring-blue-800">Back to Project List</button>
+        <button onclick="goBack()"
+            class="text-white bg-gray-700 hover:bg-gray-300 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-200 focus:outline-none dark:focus:ring-blue-800">
+            Back to Previous Page
+        </button>
     </div>
     <script>
+        function goBack() {
+            var backUrl = "{{ back_url }}";  // Get the dynamic back URL
+            if (backUrl && backUrl !== "null") {
+                window.location.href = backUrl;  // Navigate to the custom back URL
+            } else {
+                window.history.back();  // Fallback to browser's history
+            }
+        }
+
         function showCategory(category) {
             // Hide all categories
             const categories = document.querySelectorAll('.task-category');
             categories.forEach(category => category.classList.add('hidden'));
-    
+
             // Show the selected category
             const activeCategory = document.getElementById(category);
             if (activeCategory) {
                 activeCategory.classList.remove('hidden');
             }
-    
+
             // Reset tab styles
             const tabs = document.querySelectorAll('button');
             tabs.forEach(tab => tab.classList.remove('bg-blue-700'));
-    
+
             // Highlight the active tab
             const activeTab = document.getElementById(category + 'Tab');
             if (activeTab) {
                 activeTab.classList.add('bg-blue-700');
             }
         }
-    
+
         // Default category to show (Backlog)
         showCategory('backlog');
     </script>
-{% endblock %}
+
+    <style>
+        .task-category .bg-white {
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            /* Smooth transition for height and other properties */
+            min-height: 150px;
+            /* Set a minimum height for the card */
+        }
+
+        .task-category .summary-section {
+            max-height: 0;
+            /* Initially hide the summary section */
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            /* Smooth transition for expansion */
+        }
+
+        .task-category .bg-white:hover .summary-section {
+            max-height: 500px;
+            /* Adjust this value based on the maximum expected height */
+            opacity: 1;
+        }
+
+        .task-category .bg-white .buttons-container {
+            margin-top: 16px;
+            /* Space between the summary and buttons */
+        }
+
+        .task-category .bg-white form {
+            margin-top: 16px;
+            /* Space between the buttons and the form */
+        }
+    </style>
+    {% endblock %}
