@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
-from models import Project, db, Task, User, MiniAdminProject, MiniAdminProjectTask, MiniAdminProjectStudent
+from models import Project, db, Task, User, MiniAdminProject, MiniAdminProjectTask, MiniAdminProjectStudent, LongTermMemory
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
@@ -8,11 +8,32 @@ import random
 from utils.pdf_summarize import analyze_synopsis
 from utils.task_generation import generate_dynamic_coding_tasks
 import json
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage, AIMessage
+import markdown
+from dotenv import load_dotenv
+
+load_dotenv()
 
 student_routes = Blueprint('student_routes', __name__)
 
 UPLOAD_FOLDER = 'static/uploads/synopsis'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# LangChain configuration
+# os.environ["LANGCHAIN_API_KEY"] = os.environ.get("LANGCHAIN_API_KEY")
+# os.environ["GOOGLE_API_KEY"] = os.environ.get("GEMINI_API_KEY")
+os.environ["LANGCHAIN_API_KEY"] = "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"
+os.environ["GOOGLE_API_KEY"] = "AIzaSyDjycqu5K7H7VvbkmlAemZhkdfMfYNX5TM"
+chat_model = ChatGoogleGenerativeAI(model="gemini-pro")
+
+memory_store = {}
+
+def render_markdown(content):
+    return markdown.markdown(content)
+
+# Buffer memory configuration (keeps the last N messages)
+BUFFER_SIZE = 40  
 
 def check_student_role(current_user):
     if current_user.role != 'student':
@@ -248,6 +269,40 @@ def project_archive():
     projects = Project.query.all()
     return render_template('student/project_archive.html', projects=projects)
 
+# -------------------------------  Chatbot functions  ------------------------------------------
+
+def get_memory(project_id):
+    memory = memory_store.get(project_id)
+    if not memory:
+        memory = {'messages': []}
+        memory_store[project_id] = memory
+
+        long_memory = LongTermMemory.query.filter_by(project_id=project_id).first()
+        if long_memory:
+            for line in long_memory.chat_content.split('\n'):
+                if '|' in line:
+                    try:
+                        sender, content = line.split('|', 1)
+                        memory['messages'].append({'sender': sender, 'content': content})
+                    except ValueError:
+                        print(f"Skipping malformed line: {line}")
+        else:
+            # Use student_id (or mini-admin if needed) to link to the correct user
+            new_memory = LongTermMemory(
+                project_id=project_id,
+                user_id=Project.query.get(project_id).student_id,  # Change to student_id
+                chat_content=""
+            )
+            db.session.add(new_memory)
+            db.session.commit()
+    print(f"Memory for Project {project_id}: {memory}") 
+    return memory
+
+
+def add_message_to_buffer(memory, sender, content):
+    memory['messages'].append({'sender': sender, 'content': content})
+    if len(memory['messages']) > BUFFER_SIZE:
+        memory['messages'].pop(0)
 
 # ------------------  From here I will start with the tasks  -----------------------------------
 def check_task_status(task):
@@ -257,7 +312,7 @@ def check_task_status(task):
             db.session.commit()
             flash(f"Task '{task.title}' moved to Backlog due to overdue date.", 'warning')
             
-@student_routes.route('/project/<int:project_id>/tasks')
+@student_routes.route('/project/<int:project_id>/tasks', methods=['GET', 'POST'])
 @login_required
 def view_tasks(project_id):
     project = Project.query.get_or_404(project_id)
@@ -276,10 +331,98 @@ def view_tasks(project_id):
     progressed_tasks = Task.query.filter_by(project_id=project_id, status='Progressed').all()
     finished_tasks = Task.query.filter_by(project_id=project_id, status='Finished').all()
 
+    ##########################################################################################
+    # Get chat history for the project
+    memory = get_memory(project_id)
+    chat_history = memory['messages']
+
+    print(f"Chat history for Project {project_id}: {chat_history}")
+
+    if request.method == 'POST':
+        user_message = request.form.get('message')
+
+        if user_message and user_message.strip():
+            # Add user message to memory buffer
+            add_message_to_buffer(memory, 'user', render_markdown(user_message))
+
+            # Retrieve past messages (history) for context
+            previous_conversations = "\n".join(
+                [f"{msg['sender'].capitalize()}: {msg['content']}" for msg in chat_history[-5:]]
+            )
+
+            # Create the prompt including past conversations
+            prompt = f"""
+            You are an AI assistant helping students with their project tasks. The project details are as follows:
+
+            Project Summary:
+            {project.summary}
+
+            Previous Conversations:
+            {previous_conversations}
+
+            The student has asked the following question: "{user_message}"
+            """
+
+            # Get AI response based on the history and current user message
+            ai_response = chat_model.invoke([HumanMessage(content=prompt)]).content or \
+                          f"Here’s a bit more information about the project: {project.summary}."
+
+            # Add AI response to memory buffer
+            add_message_to_buffer(memory, 'ai', render_markdown(ai_response))
+
+            # Save updated memory to the database
+            chat_history_str = "\n".join([f"{msg['sender']}|{msg['content']}" for msg in memory['messages']])
+            long_memory = LongTermMemory.query.filter_by(project_id=project_id).first()
+            if long_memory:
+                long_memory.chat_content = chat_history_str
+            else:
+                long_memory = LongTermMemory(
+                    project_id=project_id,
+                    user_id=project.user_id,
+                    chat_content=chat_history_str
+                )
+                db.session.add(long_memory)
+            db.session.commit()
+
+        return jsonify({'chat_history': chat_history})
+
     return render_template('student/tasks.html', project=project, user=current_user,
                            backlog_tasks=backlog_tasks, in_progress_tasks=in_progress_tasks,
-                           progressed_tasks=progressed_tasks, finished_tasks=finished_tasks)
+                           progressed_tasks=progressed_tasks, finished_tasks=finished_tasks,
+                           chat_history=chat_history)
     
+@student_routes.route('/student/save_chat/<project_id>', methods=['POST'])
+def save_chat(project_id):
+    project = Project.query.get(project_id)
+
+    memory = get_memory(project_id)
+    chat_history = memory['messages']
+
+    print(f"Chat history before saving for Project {project_id}: {chat_history}")
+
+    if chat_history:
+        chat_history_str = "\n".join([f"{msg['sender']}|{msg['content']}" 
+            for msg in chat_history if 'sender' in msg and 'content' in msg
+        ])
+
+        # Update LongTermMemory with the correct user_id
+        long_memory = LongTermMemory.query.filter_by(project_id=project_id).first()
+        if long_memory:
+            long_memory.chat_content = chat_history_str
+        else:
+            long_memory = LongTermMemory(
+                project_id=project_id,
+                user_id=project.student_id,  
+                chat_content=chat_history_str
+            )
+            db.session.add(long_memory)
+        db.session.commit()
+
+        memory_store[project_id]['messages'] = []
+
+    return redirect(url_for('student_routes.view_tasks', project_id=project.id))
+
+
 @student_routes.route('/project/<int:project_id>/tasks/add', methods=['GET', 'POST'])
 @login_required
 def add_task(project_id):
