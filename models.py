@@ -41,7 +41,7 @@ class Project(db.Model):
     category = db.Column(db.String(50), nullable=True) 
 
     tasks = db.relationship('Task', backref='project', cascade="all, delete", lazy=True)  # Tasks within the project
-    long_term_memory = db.relationship('LongTermMemory', backref='project', lazy=True)
+    long_term_memory = db.relationship('LongTermMemory', backref='project', cascade="all, delete", lazy=True)
 
     def __repr__(self):
         return f"Project('{self.title}', '{self.start_date}')"

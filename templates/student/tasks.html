@@ -169,40 +169,28 @@
     <br>
     <br>
     <hr>
-    <div>
-        <header>
-            <h1>Project: {{ project.title }}</h1>
-        </header>
+    <div class="chat-container">
+        <h2>Project: {{ project.title }}</h2>
+        <p><strong>Project Summary:</strong> {{ project.summary }}</p>
 
-        <section>
-            <div class="markdown-content">
-                <h2>Project Summary</h2>
-                <p>{{ project.summary }}</p>
-            </div>
-
-            <h2>Chat History</h2>
-            <div id="chat-history">
-                {% for msg in chat_history %}
-                <div class="{{ msg.sender }}">
+        <h3>Chat History</h3>
+        <div id="chat-history">
+            {% for msg in chat_history %}
+                <div class="message {{ msg.sender }}">
                     <strong>{{ msg.sender.capitalize() }}</strong>
                     <div class="markdown-content">{{ msg.content|safe }}</div>
                 </div>
-                {% endfor %}
-            </div>
+            {% endfor %}
+        </div>
 
-            <!-- Chat Form -->
-            <form id="chat-form">
-                <textarea id="message" name="message" rows="4"
-                    placeholder="Type your message here..."></textarea><br><br>
-                <button type="submit">Send</button>
-            </form>
+        <form id="chat-form">
+            <textarea id="message" name="message" rows="3" placeholder="Type your message..."></textarea>
+            <button type="submit">Send</button>
+        </form>
 
-            <!-- Save Chat Form -->
-            <form action="{{ url_for('student_routes.save_chat', project_id=project.id) }}" method="POST"
-                id="stop-chat-form">
-                <button type="submit" id="stop-chat-button">Stop Chat</button>
-            </form>
-        </section>
+        <form action="{{ url_for('student_routes.save_chat', project_id=project.id) }}" method="POST" id="stop-chat-form">
+            <button type="submit" id="stop-chat-button">Stop Chat</button>
+        </form>
     </div>
 
     <script>
@@ -229,34 +217,28 @@
     const chatHistory = document.getElementById("chat-history");
     const messageInput = document.getElementById("message");
 
-    // Automatically scroll to the bottom when the page loads
     document.addEventListener("DOMContentLoaded", function () {
         scrollToBottom();
     });
 
-    // Handle form submission
     chatForm.addEventListener("submit", async function (e) {
-        e.preventDefault(); // Prevent the default form submission
-
+        e.preventDefault();
         const message = messageInput.value.trim();
-        if (!message) return; // Ignore empty messages
+        if (!message) return;
 
         try {
-            // Send message to the server via AJAX
             const response = await fetch(`/project/{{ project.id }}/tasks`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: new URLSearchParams({ message }),
             });
 
             if (response.ok) {
-                const data = await response.json(); // Expect JSON response with chat history
+                const data = await response.json();
                 if (data.chat_history) {
-                    updateChatHistory(data.chat_history); // Update chat dynamically
+                    updateChatHistory(data.chat_history);
                 }
-                messageInput.value = ""; // Clear the input field
+                messageInput.value = "";
             } else {
                 console.error("Failed to send message:", response.statusText);
             }
@@ -265,32 +247,28 @@
         }
     });
 
-    // Function to update the chat history dynamically
     function updateChatHistory(history) {
-    chatHistory.innerHTML = ""; // Clear the current chat history
-    history.forEach((msg, index) => {
-        const div = document.createElement("div");
-        div.className = msg.sender;
+        chatHistory.innerHTML = "";
+        history.forEach((msg, index) => {
+            const div = document.createElement("div");
+            div.className = `message ${msg.sender}`;
 
-        // Render Markdown content
-        const renderedContent = marked.parse(msg.content);  // Use marked to render markdown
+            const renderedContent = marked.parse(msg.content);
 
-        div.innerHTML = ` 
-            <strong>${msg.sender.charAt(0).toUpperCase() + msg.sender.slice(1)}</strong>
-            <div class="markdown-content">${renderedContent}</div>
-        `;
+            div.innerHTML = `
+                <strong>${msg.sender.charAt(0).toUpperCase() + msg.sender.slice(1)}</strong>
+                <div class="markdown-content">${renderedContent}</div>
+            `;
 
-        chatHistory.appendChild(div);
+            chatHistory.appendChild(div);
 
-        // Apply the typing effect only to the last AI message
-        if (msg.sender === "ai" && index === history.length - 1) {
-            applyTypingEffect(div.querySelector(".markdown-content"));
-        }
-    });
-    scrollToBottom(); // Scroll to the bottom after updating the chat history
-}
+            if (msg.sender === "ai" && index === history.length - 1) {
+                applyTypingEffect(div.querySelector(".markdown-content"));
+            }
+        });
+        scrollToBottom();
+    }
 
-    // Function to apply the typing effect to the AI's message
     function applyTypingEffect(element) {
         const text = element.innerHTML;
         element.innerHTML = "";
@@ -308,21 +286,17 @@
         typeCharacter();
     }
 
-    // Function to scroll to the bottom of the chat history
     function scrollToBottom() {
         chatHistory.scrollTop = chatHistory.scrollHeight;
     }
 
-    // Disable and update the button immediately upon the first click
     document.getElementById("stop-chat-form").addEventListener("submit", function(event) {
         var button = document.getElementById("stop-chat-button");
-        button.disabled = true; // Disable button
-        button.innerText = "Saving..."; // Change button text to indicate saving
-
-        // Optionally add a small delay before submitting the form
-        setTimeout(function() {
-            document.getElementById("stop-chat-form").submit(); // Submit form after the button is updated
-        }, 20); // 20ms delay to ensure button text change is visible
+        button.disabled = true;
+        button.innerText = "Saving...";
+        setTimeout(() => {
+            document.getElementById("stop-chat-form").submit();
+        }, 20);
     });
 </script>
 
@@ -365,40 +339,43 @@
     }
 
 
-
-
-    #chat-history {
-            margin: 20px auto;
+    .chat-container {
             max-width: 800px;
-            padding: 15px;
+            margin: auto;
             background: white;
+            padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .chat-history {
+            max-height: 400px;
             overflow-y: auto;
-            max-height: 400px; /* Added max height for scrollable history */
+            padding: 10px;
+        }
+        .message {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            max-width: 70%;
         }
         .user {
-            background-color: #e1f5fe;
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
-            text-align: left;
+            background: #d1e7fd;
+            align-self: flex-end;
+            text-align: right;
         }
         .ai {
-            background-color: #ede7f6;
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
+            background: #f1e0ff;
+            align-self: flex-start;
             text-align: left;
         }
-        .user strong, .ai strong {
+        .message strong {
             display: block;
-            font-size: 0.9em;
+            font-size: 0.8em;
             color: #555;
         }
-        form {
-            margin: 20px auto;
-            max-width: 800px;
+        .typing-indicator {
+            font-style: italic;
+            color: gray;
         }
         textarea {
             width: 100%;
@@ -407,25 +384,14 @@
             border-radius: 4px;
             resize: vertical;
         }
-        .markdown-content h2 {
-            color: #4CAF50;
-        }
-        .markdown-content p, .markdown-content ul, .markdown-content ol, .markdown-content blockquote {
-            margin: 10px 0;
-        }
-        blockquote {
-            padding: 10px;
-            border-left: 4px solid #4CAF50;
-            background: #f9f9f9;
-            margin: 10px 0;
-            font-style: italic;
-        }
-        pre, code {
-            background: #f4f4f4;
-            padding: 5px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            overflow-x: auto;
+        button {
+            margin-top: 10px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
         }
 </style>
 

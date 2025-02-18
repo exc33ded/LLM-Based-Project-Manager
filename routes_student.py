@@ -21,10 +21,14 @@ UPLOAD_FOLDER = 'static/uploads/synopsis'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # LangChain configuration
-# os.environ["LANGCHAIN_API_KEY"] = os.environ.get("LANGCHAIN_API_KEY")
-# os.environ["GOOGLE_API_KEY"] = os.environ.get("GEMINI_API_KEY")
-os.environ["LANGCHAIN_API_KEY"] = "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"
-os.environ["GOOGLE_API_KEY"] = "AIzaSyDjycqu5K7H7VvbkmlAemZhkdfMfYNX5TM"
+os.environ["LANGSMITH_TRACING"] = os.environ.get("LANGSMITH_TRACING", "false")
+os.environ["LANGSMITH_ENDPOINT"] = os.environ.get("LANGSMITH_ENDPOINT", "")
+os.environ["LANGSMITH_API_KEY"] = os.environ.get("LANGSMITH_API_KEY", "")
+os.environ["LANGSMITH_PROJECT"] = os.environ.get("LANGSMITH_PROJECT", "")
+
+os.environ["LANGCHAIN_API_KEY"] = os.environ.get("LANGCHAIN_API_KEY", "")
+os.environ["GOOGLE_API_KEY"] = os.environ.get("GOOGLE_API_KEY", "")
+
 chat_model = ChatGoogleGenerativeAI(model="gemini-pro")
 
 memory_store = {}
@@ -243,17 +247,28 @@ def delete_project(project_id):
     result = check_student_role(current_user)
     if result:
         return result
-    
+
     project = Project.query.get_or_404(project_id)
 
     if project.student_id != current_user.id:
         flash('Unauthorized to delete this project', 'danger')
         return redirect(url_for('student_routes.view_projects'))
 
-    db.session.delete(project)
-    db.session.commit()
-    flash("Project deleted successfully!", "success")
+    try:
+        LongTermMemory.query.filter_by(project_id=project_id).delete()
+
+        db.session.delete(project)
+        db.session.commit()
+        memory_store.pop(project_id, None)
+
+        flash("Project and its chat history deleted successfully!", "success")
+
+    except Exception as e:
+        db.session.rollback()  
+        flash(f"Error deleting project: {str(e)}", "danger")
+
     return redirect(url_for('student_routes.view_projects'))
+
 
 @student_routes.route('/student/projects/archive')
 @login_required
@@ -279,23 +294,34 @@ def get_memory(project_id):
 
         long_memory = LongTermMemory.query.filter_by(project_id=project_id).first()
         if long_memory:
-            for line in long_memory.chat_content.split('\n'):
-                if '|' in line:
-                    try:
-                        sender, content = line.split('|', 1)
-                        memory['messages'].append({'sender': sender, 'content': content})
-                    except ValueError:
-                        print(f"Skipping malformed line: {line}")
+            try:
+                chat_data = json.loads(long_memory.chat_content)  # Load JSON structure
+                ai_msgs = chat_data.get("AI", [])
+                user_msgs = chat_data.get("User", [])
+
+                # Ensure messages are stored in sequential order
+                for ai_msg, user_msg in zip(ai_msgs, user_msgs):
+                    memory['messages'].append({'sender': 'User', 'content': user_msg})
+                    memory['messages'].append({'sender': 'AI', 'content': ai_msg})
+
+                # If one list is longer, add remaining messages
+                if len(ai_msgs) > len(user_msgs):
+                    memory['messages'].append({'sender': 'AI', 'content': ai_msgs[-1]})
+                elif len(user_msgs) > len(ai_msgs):
+                    memory['messages'].append({'sender': 'User', 'content': user_msgs[-1]})
+
+            except json.JSONDecodeError:
+                print(f"Error parsing chat content for project {project_id}")
         else:
-            # Use student_id (or mini-admin if needed) to link to the correct user
+            # Initialize empty memory if no previous chat exists
             new_memory = LongTermMemory(
                 project_id=project_id,
-                user_id=Project.query.get(project_id).student_id,  # Change to student_id
-                chat_content=""
+                user_id=Project.query.get(project_id).student_id,
+                chat_content=json.dumps({"AI": [], "User": []})  # JSON format
             )
             db.session.add(new_memory)
             db.session.commit()
-    print(f"Memory for Project {project_id}: {memory}") 
+
     return memory
 
 
@@ -336,18 +362,16 @@ def view_tasks(project_id):
     memory = get_memory(project_id)
     chat_history = memory['messages']
 
-    print(f"Chat history for Project {project_id}: {chat_history}")
-
     if request.method == 'POST':
         user_message = request.form.get('message')
 
         if user_message and user_message.strip():
             # Add user message to memory buffer
-            add_message_to_buffer(memory, 'user', render_markdown(user_message))
+            add_message_to_buffer(memory, 'User', render_markdown(user_message))
 
             # Retrieve past messages (history) for context
             previous_conversations = "\n".join(
-                [f"{msg['sender'].capitalize()}: {msg['content']}" for msg in chat_history[-5:]]
+                [f"{msg['sender']}: {msg['content']}" for msg in chat_history[-5:]]
             )
 
             # Create the prompt including past conversations
@@ -368,18 +392,24 @@ def view_tasks(project_id):
                           f"Here’s a bit more information about the project: {project.summary}."
 
             # Add AI response to memory buffer
-            add_message_to_buffer(memory, 'ai', render_markdown(ai_response))
+            add_message_to_buffer(memory, 'AI', render_markdown(ai_response))
 
-            # Save updated memory to the database
-            chat_history_str = "\n".join([f"{msg['sender']}|{msg['content']}" for msg in memory['messages']])
+            # Save updated memory to the database in JSON format
+            chat_data = {"User": [], "AI": []}
+            for msg in memory['messages']:
+                if msg['sender'] == 'AI':
+                    chat_data["AI"].append(msg['content'])
+                else:
+                    chat_data["User"].append(msg['content'])
+
             long_memory = LongTermMemory.query.filter_by(project_id=project_id).first()
             if long_memory:
-                long_memory.chat_content = chat_history_str
+                long_memory.chat_content = json.dumps(chat_data)
             else:
                 long_memory = LongTermMemory(
                     project_id=project_id,
-                    user_id=project.user_id,
-                    chat_content=chat_history_str
+                    user_id=project.student_id,
+                    chat_content=json.dumps(chat_data)
                 )
                 db.session.add(long_memory)
             db.session.commit()
@@ -398,22 +428,23 @@ def save_chat(project_id):
     memory = get_memory(project_id)
     chat_history = memory['messages']
 
-    print(f"Chat history before saving for Project {project_id}: {chat_history}")
-
     if chat_history:
-        chat_history_str = "\n".join([f"{msg['sender']}|{msg['content']}" 
-            for msg in chat_history if 'sender' in msg and 'content' in msg
-        ])
+        chat_data = {"AI": [], "User": []}
+        for msg in chat_history:
+            if msg['sender'] == 'AI':
+                chat_data["AI"].append(msg['content'])
+            else:
+                chat_data["User"].append(msg['content'])
 
-        # Update LongTermMemory with the correct user_id
+        # Update LongTermMemory with JSON
         long_memory = LongTermMemory.query.filter_by(project_id=project_id).first()
         if long_memory:
-            long_memory.chat_content = chat_history_str
+            long_memory.chat_content = json.dumps(chat_data)
         else:
             long_memory = LongTermMemory(
                 project_id=project_id,
-                user_id=project.student_id,  
-                chat_content=chat_history_str
+                user_id=project.student_id,
+                chat_content=json.dumps(chat_data)
             )
             db.session.add(long_memory)
         db.session.commit()
