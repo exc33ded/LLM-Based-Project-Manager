@@ -1,0 +1,66 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-8">
+    <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">Create Project for {{ mini_admin.name }}</h1>
+
+    <form method="POST" id="projectForm" onsubmit="return validateForm()">
+        <div class="mb-4">
+            <label class="block text-gray-700 font-bold">Title</label>
+            <input type="text" name="title" required class="w-full p-2 border border-gray-300 rounded-md">
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 font-bold">Description</label>
+            <textarea id="description" name="description" required class="w-full p-2 border border-gray-300 rounded-md"
+                oninput="updateWordCount()"></textarea>
+            <p id="wordCount" class="text-sm text-gray-600">Words: 0</p>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 font-bold">Assign Students</label>
+            <div class="border border-gray-300 rounded-md p-2 max-h-60 overflow-y-auto">
+                {% for student in assigned_students %}
+                <div class="flex items-center mb-2">
+                    <input type="checkbox" id="student_{{ student.id }}" name="students" value="{{ student.id }}" class="mr-2">
+                    <label for="student_{{ student.id }}">{{ student.name }} ({{ student.rollno }})</label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>                  
+
+        <div class="mb-4 flex items-center">
+            <input type="checkbox" id="generate_ai_tasks" name="generate_ai_tasks" class="mr-2">
+            <label for="generate_ai_tasks" class="text-gray-700 font-bold">Generate AI-based Tasks</label>
+        </div>
+
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md">Create Project</button>
+    </form>
+    <br>
+    <div class="text-left">
+        <button onclick="history.back()"
+            class="text-white bg-gray-700 hover:bg-gray-300 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-200 focus:outline-none dark:focus:ring-blue-800">Back
+            to Task List</button>
+    </div>
+</div>
+
+<script>
+    function updateWordCount() {
+        let description = document.getElementById('description').value.trim();
+        let words = description.length > 0 ? description.split(/\s+/).filter(word => word.length > 0) : [];
+
+        document.getElementById('wordCount').textContent = "Words: " + words.length;
+    }
+
+    function validateForm() {
+        let description = document.getElementById('description').value.trim();
+        let words = description.length > 0 ? description.split(/\s+/).filter(word => word.length > 0) : [];
+
+        if (words.length < 30) {
+            alert("Description must contain at least 30 words.");
+            return false;
+        }
+        return true;
+    }
+</script>
+{% endblock %}

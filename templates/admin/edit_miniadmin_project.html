@@ -1,0 +1,71 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg">
+    <h1 class="text-2xl font-bold text-gray-800 mb-4">Edit Project</h1>
+
+    <form method="POST" id="projectForm" onsubmit="return validateForm()">
+        <div class="mb-4">
+            <label class="block text-gray-700 font-semibold">Project Title:</label>
+            <input type="text" name="title" value="{{ project.title }}" 
+                   class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 font-semibold">Description:</label>
+            <textarea name="description" id="description" rows="4"
+                      class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" oninput="updateWordCount()">{{ project.description }}</textarea>
+                      <p id="wordCount" class="text-sm text-gray-600">Words: 0</p>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 font-semibold">Assign Students:</label>
+            <select name="students" multiple class="w-full p-2 border rounded-lg">
+                {% for student in all_students %}
+                    <option value="{{ student.id }}" {% if student.id in assigned_students %}selected{% endif %}>
+                        {{ student.name }} ({{ student.rollno }})
+                    </option>
+                {% endfor %}
+            </select>
+            <p class="text-gray-500 text-sm">Hold Ctrl (Windows) or Cmd (Mac) to select multiple students.</p>
+        </div>
+
+        <div class="flex justify-between">
+            <!-- Back Button -->
+            <button type="button" onclick="history.back()"
+                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">
+                ⬅ Back
+            </button>
+
+            <!-- Save Button -->
+            <button type="submit"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+                💾 Save Changes
+            </button>
+        </div>
+    </form>
+    <br>
+    <div class="text-left">
+        <button onclick="history.back()" class="text-white bg-gray-700 hover:bg-gray-300 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-200 focus:outline-none dark:focus:ring-blue-800">Back to Task List</button>
+    </div>
+</div>
+<script>
+    function updateWordCount() {
+        let description = document.getElementById('description').value.trim();
+        let words = description.length > 0 ? description.split(/\s+/).filter(word => word.length > 0) : [];
+
+        document.getElementById('wordCount').textContent = "Words: " + words.length;
+    }
+
+    function validateForm() {
+        let description = document.getElementById('description').value.trim();
+        let words = description.length > 0 ? description.split(/\s+/).filter(word => word.length > 0) : [];
+
+        if (words.length < 30) {
+            alert("Description must contain at least 30 words.");
+            return false;
+        }
+        return true;
+    }
+</script>
+{% endblock %}

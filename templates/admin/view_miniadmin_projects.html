@@ -1,0 +1,41 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto p-8">
+    <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">Mini-Admin Projects & Students</h1>
+    
+    <div class="bg-white p-6 rounded-lg shadow-lg">
+        <table id="example" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Mentor Name</th>
+                    <th>Number of Projects</th>
+                    <th>Number of Students</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in mini_admin_data %}
+                <tr>
+                    <td class="px-4 py-4 text-gray-800 font-medium">{{ entry.mini_admin.name }}</td>
+                    <td class="px-4 py-4 text-gray-700">{{ entry.projects|length }}</td>
+                    <td class="px-4 py-4 text-gray-700">{{ entry.students|length }}</td>
+                    <td class="px-4 py-4">
+                        <a href="{{ url_for('admin_routes.view_mentor_projects', miniadmin_id=entry.mini_admin.id) }}" 
+                           class="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            View Details
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#example').DataTable();
+    });
+</script>
+{% endblock %}

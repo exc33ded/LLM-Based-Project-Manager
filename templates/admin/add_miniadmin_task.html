@@ -1,0 +1,41 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<div class="max-w-lg mx-auto mt-8 p-6 bg-white rounded-lg shadow-lg">
+    <h1 class="text-3xl font-semibold text-gray-800 mb-6">Add Task</h1>
+
+    <form method="POST" action="{{ url_for('admin_routes.add_miniadmin_task', project_id=project.id) }}">
+
+        <div class="mb-4">
+            <label for="title" class="block text-sm font-medium text-gray-700">Task Title:</label>
+            <input type="text" id="title" name="title" required
+                class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter task title">
+        </div>
+
+        <div class="mb-4">
+            <label for="description" class="block text-sm font-medium text-gray-700">Task Description:</label>
+            <textarea id="description" name="description" rows="4" required
+                class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter task description"></textarea>
+        </div>
+
+        <div class="mb-4">
+            <label for="due_date" class="block text-sm font-medium text-gray-700">Due Date:</label>
+            <input type="date" id="due_date" name="due_date" required
+                class="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div class="flex justify-between items-center">
+            <button type="submit"
+                class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Add
+                Task</button>
+        </div>
+    </form>
+    <div class="flex justify-between items-center">
+        <button onclick="history.back()"
+            class="text-white bg-gray-700 hover:bg-gray-300 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-200 focus:outline-none dark:focus:ring-blue-800">Back
+            to Task List</button>
+    </div>
+</div>
+{% endblock %}

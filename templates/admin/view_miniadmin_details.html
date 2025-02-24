@@ -1,0 +1,65 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-8">
+    <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">{{ mini_admin.name }}'s Projects & Students</h1>
+
+    <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-xl font-bold text-gray-700">Projects & Assigned Students:</h2>
+
+        <div class="mb-6 text-center">
+            <a href="{{ url_for('admin_routes.update_miniadmin_project_create', miniadmin_id=mini_admin.id) }}"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                + Create Project
+            </a>
+        </div>
+
+        <div class="space-y-6">
+            {% for entry in project_data %}
+            <div class="p-4 border border-gray-200 rounded-lg flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <a
+                            href="{{ url_for('admin_routes.view_miniadmin_project_tasks', project_id=entry.project.id) }}">
+                            {{ entry.project.title }}
+                        </a>
+                    </h3>
+                    <p class="text-gray-600">Created on: {{ entry.project.created_at.strftime('%Y-%m-%d') }}</p>
+
+                    <h4 class="mt-2 text-gray-700 font-medium">Assigned Students:</h4>
+                    <ul class="list-disc pl-6">
+                        {% for student in entry.students %}
+                        <li class="mt-1">{{ student.name }} ({{ student.rollno }})</li>
+                        {% else %}
+                        <li>No students assigned to this project.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="flex space-x-2">
+                    <!-- Edit Button -->
+                    <a href="{{ url_for('admin_routes.update_miniadmin_project_edit', project_id=entry.project.id) }}"
+                        class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                        ✏ Edit
+                    </a>
+
+
+                    <!-- Delete Button -->
+                    <form
+                        action="{{ url_for('admin_routes.update_miniadmin_project_delete', project_id=entry.project.id) }}"
+                        method="POST"
+                        onsubmit="return confirm('Are you sure you want to delete this project? This action cannot be undone.');">
+                        <button type="submit"
+                            class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                            🗑 Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <p>No projects found.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

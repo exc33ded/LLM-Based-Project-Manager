@@ -169,28 +169,29 @@
     <br>
     <br>
     <hr>
-    <div class="chat-container">
-        <h2>Project: {{ project.title }}</h2>
-        <p><strong>Project Summary:</strong> {{ project.summary }}</p>
+    <!-- Floating chat button -->
+<button id="chat-toggle-btn" class="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-full shadow-lg">Chat</button>
 
-        <h3>Chat History</h3>
-        <div id="chat-history">
-            {% for msg in chat_history %}
-                <div class="message {{ msg.sender }}">
-                    <strong>{{ msg.sender.capitalize() }}</strong>
-                    <div class="markdown-content">{{ msg.content|safe }}</div>
-                </div>
-            {% endfor %}
+<!-- Chat overlay -->
+<div id="chat-overlay" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl">
+        <div class="chat-container">
+            <h2>Project: {{ project.title }}</h2>
+            <p><strong>Project Summary:</strong> {{ project.summary }}</p>
+            <h3>Chat History</h3>
+            <div id="chat-history" class="chat-history">
+                {% for msg in chat_history %}
+                    <div class="message {{ msg.sender.lower() }}">
+                        <strong>{{ msg.sender.capitalize() }}</strong>
+                        <div class="markdown-content">{{ msg.content|safe }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+            <form id="chat-form">
+                <textarea id="message" name="message" rows="3" placeholder="Type your message..."></textarea>
+                <button type="submit">Send</button>
+            </form>
         </div>
-
-        <form id="chat-form">
-            <textarea id="message" name="message" rows="3" placeholder="Type your message..."></textarea>
-            <button type="submit">Send</button>
-        </form>
-
-        <form action="{{ url_for('student_routes.save_chat', project_id=project.id) }}" method="POST" id="stop-chat-form">
-            <button type="submit" id="stop-chat-button">Stop Chat</button>
-        </form>
     </div>
 
     <script>
@@ -211,92 +212,120 @@
         showCategory('backlog');
     </script>
 
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
-    const chatForm = document.getElementById("chat-form");
-    const chatHistory = document.getElementById("chat-history");
-    const messageInput = document.getElementById("message");
+    const projectId = {{ project.id }};
+    const chatToggleBtn = document.getElementById('chat-toggle-btn');
+    const chatOverlay = document.getElementById('chat-overlay');
+    const chatForm = document.getElementById('chat-form');
+    const chatHistory = document.getElementById('chat-history');
+    const messageInput = document.getElementById('message');
+    const scrollToBottomBtn = document.getElementById('scroll-to-bottom-btn');
 
-    document.addEventListener("DOMContentLoaded", function () {
-        scrollToBottom();
+    // Toggle chat overlay and load history
+    chatToggleBtn.addEventListener('click', async () => {
+        if (chatOverlay.classList.contains('hidden')) {
+            chatOverlay.classList.remove('hidden');
+            chatToggleBtn.textContent = 'Stop';
+            await loadChatHistory(); // Load history immediately
+            scrollToBottom(); // Scroll to bottom on open
+        } else {
+            await saveChat();
+            chatOverlay.classList.add('hidden');
+            chatToggleBtn.textContent = 'Chat';
+        }
     });
 
-    chatForm.addEventListener("submit", async function (e) {
+    // Handle message submission
+    chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const message = messageInput.value.trim();
         if (!message) return;
 
         try {
-            const response = await fetch(`/project/{{ project.id }}/tasks`, {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams({ message }),
+            const response = await fetch(`/project/${projectId}/tasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ message })
             });
-
             if (response.ok) {
                 const data = await response.json();
-                if (data.chat_history) {
-                    updateChatHistory(data.chat_history);
-                }
-                messageInput.value = "";
+                console.log('Message response data:', data);
+                updateChatHistory(data.chat_history); // Update with new messages
+                messageInput.value = '';
+                scrollToBottom(); // Scroll to bottom after sending
             } else {
-                console.error("Failed to send message:", response.statusText);
+                console.error('Failed to send message:', response.statusText);
             }
         } catch (error) {
-            console.error("Error while sending message:", error);
+            console.error('Error sending message:', error);
         }
     });
 
-    function updateChatHistory(history) {
-        chatHistory.innerHTML = "";
-        history.forEach((msg, index) => {
-            const div = document.createElement("div");
-            div.className = `message ${msg.sender}`;
-
-            const renderedContent = marked.parse(msg.content);
-
-            div.innerHTML = `
-                <strong>${msg.sender.charAt(0).toUpperCase() + msg.sender.slice(1)}</strong>
-                <div class="markdown-content">${renderedContent}</div>
-            `;
-
-            chatHistory.appendChild(div);
-
-            if (msg.sender === "ai" && index === history.length - 1) {
-                applyTypingEffect(div.querySelector(".markdown-content"));
+    // Load chat history from the database
+    async function loadChatHistory() {
+        try {
+            const url = `/student/get_chat_history/${projectId}`;
+            console.log('Fetching chat history from:', url);
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+            console.log('Response status:', response.status);
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Loaded chat history:', data.chat_history);
+                updateChatHistory(data.chat_history || []); // Update UI with fetched history
+            } else {
+                console.error('Failed to load chat history:', response.status, response.statusText);
+                updateChatHistory([]); // Fallback to empty history
             }
-        });
-        scrollToBottom();
-    }
-
-    function applyTypingEffect(element) {
-        const text = element.innerHTML;
-        element.innerHTML = "";
-        let i = 0;
-        const typingSpeed = 10;
-
-        function typeCharacter() {
-            if (i < text.length) {
-                element.innerHTML += text.charAt(i);
-                i++;
-                setTimeout(typeCharacter, typingSpeed);
-            }
+        } catch (error) {
+            console.error('Error fetching chat history:', error);
+            updateChatHistory([]); // Fallback to empty history
         }
-
-        typeCharacter();
     }
 
+    // Save chat history to the database
+    async function saveChat() {
+        try {
+            const response = await fetch(`/student/save_chat/${projectId}`, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (response.ok) {
+                console.log('Chat saved successfully');
+            } else {
+                console.error('Failed to save chat:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error saving chat:', error);
+        }
+    }
+
+    // Update chat history in the UI
+    function updateChatHistory(history) {
+        console.log('Updating UI with history:', history);
+        chatHistory.innerHTML = ''; // Clear existing content
+        if (!history || history.length === 0) {
+            chatHistory.innerHTML = '<p>No chat history available.</p>';
+            return;
+        }
+        history.forEach(msg => {
+            const div = document.createElement('div');
+            div.className = `message ${msg.sender.toLowerCase()}`;
+            div.innerHTML = `<strong>${msg.sender.charAt(0).toUpperCase() + msg.sender.slice(1)}</strong><div class="markdown-content">${msg.content}</div>`;
+            chatHistory.appendChild(div);
+        });
+    }
+
+    // Scroll to the bottom of the chat history
     function scrollToBottom() {
         chatHistory.scrollTop = chatHistory.scrollHeight;
     }
 
-    document.getElementById("stop-chat-form").addEventListener("submit", function(event) {
-        var button = document.getElementById("stop-chat-button");
-        button.disabled = true;
-        button.innerText = "Saving...";
-        setTimeout(() => {
-            document.getElementById("stop-chat-form").submit();
-        }, 20);
+    // Scroll to bottom button event listener
+    scrollToBottomBtn.addEventListener('click', () => {
+        scrollToBottom();
     });
 </script>
 
@@ -339,60 +368,108 @@
     }
 
 
+    #chat-toggle-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        font-size: 18px;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1001;
+    }
+    #chat-toggle-btn:hover { background: #45a049; }
+    #chat-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    #chat-overlay.hidden { display: none; }
+    .chat-overlay-container {
+        max-height: 90vh; /* Limit height to 90% of viewport */
+        overflow-y: auto; /* Allow scrolling if content overflows */
+    }
     .chat-container {
-            max-width: 800px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .chat-history {
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 10px;
-        }
-        .message {
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
-            max-width: 70%;
-        }
-        .user {
-            background: #d1e7fd;
-            align-self: flex-end;
-            text-align: right;
-        }
-        .ai {
-            background: #f1e0ff;
-            align-self: flex-start;
-            text-align: left;
-        }
-        .message strong {
-            display: block;
-            font-size: 0.8em;
-            color: #555;
-        }
-        .typing-indicator {
-            font-style: italic;
-            color: gray;
-        }
-        textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            resize: vertical;
-        }
-        button {
-            margin-top: 10px;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            background: #4CAF50;
-            color: white;
-            cursor: pointer;
-        }
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .chat-history {
+        max-height: 50vh; /* Limit history height */
+        overflow-y: auto;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background: #f9f9f9;
+        flex-grow: 1; /* Allow it to grow within container */
+    }
+    .message {
+        padding: 10px;
+        border-radius: 8px;
+        margin: 10px 0;
+        max-width: 70%;
+        word-wrap: break-word;
+    }
+    .message.user {
+        background: #d1e7fd;
+        margin-left: auto;
+        text-align: right;
+    }
+    .message.ai { background: #f1e0ff; }
+    .message strong {
+        display: block;
+        font-size: 0.8em;
+        color: #555;
+        margin-bottom: 5px;
+    }
+    .markdown-content { word-wrap: break-word; }
+    .scroll-btn {
+        margin-top: 10px;
+        padding: 5px 10px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        align-self: center;
+    }
+    .scroll-btn:hover { background: #45a049; }
+    textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        resize: vertical;
+        margin-top: 10px;
+        font-size: 14px;
+    }
+    button {
+        margin-top: 10px;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        background: #4CAF50;
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    button:hover { background: #45a049; }
 </style>
 
 {% endblock %}
