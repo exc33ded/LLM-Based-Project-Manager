@@ -1,17 +1,45 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 text-center">
-    <!-- Welcome Modal -->
-    <div id="welcome-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
-        <div class="bg-white p-8 rounded-lg shadow-lg max-w-lg w-full">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Welcome to Project Manager!</h2>
-            <p class="text-gray-600 mb-6">Start by exploring some features or signing in!</p>
-            <button onclick="closeModal()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                Let’s Go!
-            </button>
-        </div>
-    </div>
+
+<style>
+/* Smooth Light Background */
+body {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    overflow: hidden;
+    position: relative;
+    height: 100vh;
+}
+
+/* Mouse Shadow Effect */
+#mouse-shadow {
+    position: fixed;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(114, 170, 223, 0.2) 0%, rgba(0, 0, 0, 0) 80%);
+    pointer-events: none;
+    border-radius: 50%;
+    filter: blur(15px);
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease-out;
+}
+
+.stat-box {
+    transition: transform 0.3s ease-in-out, color 0.3s ease-in-out;
+    cursor: pointer;
+}
+
+.stat-box:hover {
+    transform: scale(1.1);
+    color: #2563eb; 
+}
+
+
+</style>
+<div class="relative flex flex-col items-center justify-center min-h-screen bg-white text-center overflow-hidden">
+    
+    <!-- Moving Background -->
+    <div id="background-animation" class="absolute inset-0 pointer-events-none"></div>
 
     <!-- Main Content -->
     <h1 class="text-5xl font-bold text-gray-800 mt-12">Welcome to Advanced Project Manager for AMU</h1>
@@ -19,29 +47,33 @@
         Organize, track, and manage your projects with ease. Explore key features below or get started.
     </p>
 
-    <!-- Interactive Stats -->
     <div class="flex space-x-10 mt-12 text-center">
-        <div>
-            <h3 class="text-4xl font-bold text-gray-800"><span id="projects-completed" data-target="1200">0</span>+</h3>
+        <div class="stat-box">
+            <h3 class="text-4xl font-bold text-gray-800">
+                <span id="projects-completed">{{ project_count }}+</span>
+            </h3>
             <p class="text-gray-600">Projects Completed</p>
         </div>
-        <div>
-            <h3 class="text-4xl font-bold text-gray-800"><span id="active-users" data-target="500">0</span>+</h3>
+        <div class="stat-box">
+            <h3 class="text-4xl font-bold text-gray-800">
+                <span id="active-users">{{ user_count }}+</span>
+            </h3>
             <p class="text-gray-600">Active Users</p>
         </div>
     </div>
+    
 
     <!-- Features Section with Hover Effects -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12 max-w-4xl">
-        <div class="p-6 bg-white rounded-lg shadow-lg transform hover:scale-105 transition duration-300">
+        <div class="p-6 bg-white rounded-lg shadow-lg transition transform hover:scale-105 hover:shadow-xl hover:bg-blue-100">
             <h2 class="text-xl font-bold text-gray-700">Track Your Progress</h2>
             <p class="text-gray-600 mt-2">Visual timelines and milestones keep your projects on track.</p>
         </div>
-        <div class="p-6 bg-white rounded-lg shadow-lg transform hover:scale-105 transition duration-300">
+        <div class="p-6 bg-white rounded-lg shadow-lg transition transform hover:scale-105 hover:shadow-xl hover:bg-blue-100">
             <h2 class="text-xl font-bold text-gray-700">Collaborate with Teams</h2>
             <p class="text-gray-600 mt-2">Team messaging, task assignments, and file sharing.</p>
         </div>
-        <div class="p-6 bg-white rounded-lg shadow-lg transform hover:scale-105 transition duration-300">
+        <div class="p-6 bg-white rounded-lg shadow-lg transition transform hover:scale-105 hover:shadow-xl hover:bg-blue-100">
             <h2 class="text-xl font-bold text-gray-700">Detailed Analytics</h2>
             <p class="text-gray-600 mt-2">Monitor project metrics with detailed reports.</p>
         </div>
@@ -49,34 +81,15 @@
 </div>
 
 <script>
-    // Show welcome modal on page load
-    window.onload = function() {
-        document.getElementById('welcome-modal').classList.remove('hidden');
-    };
-
-    function closeModal() {
-        document.getElementById('welcome-modal').classList.add('hidden');
-    }
-
-    // Counter Animation for Stats
-    function animateCounters() {
-        const counters = document.querySelectorAll('[id^="projects-completed"], [id^="active-users"]');
-        counters.forEach(counter => {
-            const updateCount = () => {
-                const target = +counter.getAttribute('data-target');
-                const count = +counter.innerText;
-                const increment = target / 200;
-
-                if (count < target) {
-                    counter.innerText = Math.ceil(count + increment);
-                    setTimeout(updateCount, 20);
-                } else {
-                    counter.innerText = target;
-                }
-            };
-            updateCount();
+    document.addEventListener("DOMContentLoaded", function () {
+        let shadow = document.createElement("div");
+        shadow.id = "mouse-shadow";
+        document.body.appendChild(shadow);
+    
+        document.addEventListener("mousemove", function (event) {
+            shadow.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`;
         });
-    }
-    animateCounters();
-</script>
+    });
+    </script>
+    
 {% endblock %}

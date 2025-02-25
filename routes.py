@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
-from models import User
+from models import User, Project
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
@@ -9,9 +9,12 @@ auth_routes = Blueprint('auth_routes', __name__)
 
 UPLOAD_FOLDER_ID = 'static/uploads/id'
 os.makedirs(UPLOAD_FOLDER_ID, exist_ok=True)
+
 @auth_routes.route('/')
 def home():
-    return render_template('home.html')
+    project_count = Project.query.count()
+    user_count = User.query.count()
+    return render_template('home.html', project_count=project_count, user_count=user_count)
 
 @auth_routes.route('/register', methods=['GET', 'POST'])
 def register():

@@ -88,7 +88,7 @@ def student_dashboard():
         total_tasks += len(project_tasks)
 
     # Calculate progress percentage (if any tasks exist)
-    progress_percentage = (completed_tasks / total_tasks * 100) if total_tasks else 0
+    progress_percentage = round((completed_tasks / total_tasks * 100), 2) if total_tasks else 0
 
     # Get upcoming deadlines for the student's projects
     upcoming_deadlines = [(project.title, project.start_date.strftime('%Y-%m-%d')) for project in projects]
