@@ -12,6 +12,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage
 import markdown
 from dotenv import load_dotenv
+from utils.no_again_flash import flash_unique
 
 load_dotenv()
 
@@ -41,7 +42,7 @@ BUFFER_SIZE = 40
 
 def check_student_role(current_user):
     if current_user.role != 'student':
-        flash('Unauthorized access', 'danger')
+        flash_unique('Unauthorized access', 'danger')
         return redirect(url_for('auth_routes.login'))
     return None
 
@@ -183,7 +184,7 @@ def add_project():
             flash(f"Task generation failed: {e}", "danger")
             return redirect(url_for('student_routes.view_projects'))
 
-        flash("Project added successfully!", "success")
+        flash_unique("Project added successfully!", "success", persistent=False)
         return redirect(url_for('student_routes.view_projects'))
 
     return render_template('student/add_project.html')
@@ -198,7 +199,7 @@ def edit_project(project_id):
     project = Project.query.get_or_404(project_id)
 
     if project.student_id != current_user.id:
-        flash('Unauthorized to edit this project', 'danger')
+        flash_unique('Unauthorized to edit this project', 'danger', persistent=False)
         return redirect(url_for('student_routes.view_projects'))
     
     category_colors = ['#FFCDD2', '#F8BBD0', '#E1BEE7', '#D1C4E9', '#C5CAE9', '#BBDEFB', '#B3E5FC', '#B2EBF2', '#B2DFDB', '#C8E6C9', '#DCEDC8', '#F0F4C3']
@@ -235,7 +236,7 @@ def edit_project(project_id):
                 flash("AI analysis failed: " + analysis_result['error'], "warning")
 
         db.session.commit()
-        flash("Project updated successfully!", "success")
+        flash_unique("Project updated successfully!", "success", persistent=False)
         return redirect(url_for('student_routes.view_projects'))
 
     return render_template('student/edit_project.html', project=project, category_colors=category_colors)
@@ -261,11 +262,11 @@ def delete_project(project_id):
         db.session.commit()
         memory_store.pop(project_id, None)
 
-        flash("Project and its chat history deleted successfully!", "success")
+        flash_unique("Project and its chat history deleted successfully!", "success", persistent=False)
 
     except Exception as e:
         db.session.rollback()  
-        flash(f"Error deleting project: {str(e)}", "danger")
+        flash_unique(f"Error deleting project: {str(e)}", "danger", persistent=False)
 
     return redirect(url_for('student_routes.view_projects'))
 
@@ -278,7 +279,7 @@ def project_archive():
         return result
     
     if not current_user.is_verified:
-        flash("Only verified students can access the project archive.", "info")
+        flash_unique("Only verified students can access the project archive.", "info", persistent=False)
         return redirect(url_for('student_routes.view_projects'))
 
     projects = Project.query.all()
@@ -336,7 +337,7 @@ def check_task_status(task):
         if task.status != 'Finished':
             task.status = 'Backlog'
             db.session.commit()
-            flash(f"Task '{task.title}' moved to Backlog due to overdue date.", 'warning')
+            flash_unique(f"Task '{task.title}' moved to Backlog due to overdue date.", 'warning', persistent=False)
             
 @student_routes.route('/project/<int:project_id>/tasks', methods=['GET', 'POST'])
 @login_required
@@ -472,7 +473,7 @@ def add_task(project_id):
         db.session.add(new_task)
         db.session.commit()
 
-        flash('New task added successfully!', 'success')
+        flash_unique('New task added successfully!', 'success', persistent=False)
         return redirect(url_for('student_routes.view_tasks', project_id=project_id))
 
     return render_template('student/add_task.html', project=project)
@@ -497,10 +498,10 @@ def edit_task(task_id):
         if task.due_date.date() < datetime.now().date():
             if task.status != 'Backlog':
                 task.status = 'Backlog'
-                flash(f"Task '{task.title}' moved to Backlog due to overdue date.", 'warning')
+                flash_unique(f"Task '{task.title}' moved to Backlog due to overdue date.", 'warning')
 
         db.session.commit()
-        flash('Task updated successfully!', 'success')
+        flash_unique('Task updated successfully!', 'success', persistent=False)
         return redirect(url_for('student_routes.view_tasks', project_id=project_id))
 
     return render_template('student/edit_task.html', task=task)
@@ -520,7 +521,7 @@ def change_task_status(task_id):
     task.status = new_status
     db.session.commit()
 
-    flash(f"Task status updated to '{new_status}'", 'success')
+    flash_unique(f"Task status updated to '{new_status}'", 'success', persistent=False)
     return redirect(url_for('student_routes.view_tasks', project_id=project_id))
 
 
@@ -537,7 +538,7 @@ def delete_task(task_id):
 
     db.session.delete(task)
     db.session.commit()
-    flash('Task deleted successfully!', 'success')
+    flash_unique('Task deleted successfully!', 'success', persistent=False)
     return redirect(url_for('student_routes.view_tasks', project_id=project_id))
 
 # ------------------  Assigned Project Working  -----------------------------------
@@ -595,7 +596,7 @@ def change_assigned_task_status(task_id):
     task.status = new_status
     db.session.commit()
 
-    flash(f"Task status updated to '{new_status}'", 'success')
+    flash_unique(f"Task status updated to '{new_status}'", 'success', persistent=False)
     return redirect(url_for('student_routes.view_assigned_tasks', project_id=project_id))
 
 

@@ -4,3 +4,4 @@ Documentation/
 /static/uploads/id/
 /static/uploads/synopsis/
 .env
+.idea

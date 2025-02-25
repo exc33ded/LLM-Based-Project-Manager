@@ -7,6 +7,8 @@ import os
 
 auth_routes = Blueprint('auth_routes', __name__)
 
+UPLOAD_FOLDER_ID = 'static/uploads/id'
+os.makedirs(UPLOAD_FOLDER_ID, exist_ok=True)
 @auth_routes.route('/')
 def home():
     return render_template('home.html')

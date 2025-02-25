@@ -4,6 +4,8 @@ from models import Project, db, Task, User, MiniAdminProject, MiniAdminProjectSt
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
+from utils.task_generation import generate_dynamic_coding_tasks
+from utils.no_again_flash import flash_unique
 
 miniadmin_routes = Blueprint('miniadmin_routes', __name__)
 
@@ -11,7 +13,7 @@ miniadmin_routes = Blueprint('miniadmin_routes', __name__)
 @login_required
 def miniadmin_dashboard():
     if current_user.role != 'mini-admin':
-        flash('Access denied.', 'danger')
+        flash_unique('Access denied.', 'danger', persistent=False)
         return redirect(url_for('auth_routes.login'))
 
     # Get assigned students for the mini-admin
@@ -56,7 +58,7 @@ def miniadmin_dashboard():
 @login_required
 def my_projects():
     if current_user.role != 'mini-admin':
-        flash('Access denied.', 'danger')
+        flash_unique('Access denied.', 'danger', persistent=False)
         return redirect(url_for('auth_routes.login'))
 
     # Fetch all projects for the current mini-admin
@@ -111,7 +113,7 @@ def create_project():
 
         db.session.commit()
 
-        flash(f"Project '{title}' created successfully!", "success")
+        flash_unique(f"Project '{title}' created successfully!", "success", persistent=False)
         return redirect(url_for('miniadmin_routes.view_projects'))
 
     return render_template('miniadmin/create_project.html', students=students)
@@ -172,7 +174,7 @@ def check_task_status(task):
         if task.status != 'Finished':
             task.status = 'Backlog'
             db.session.commit()
-            flash(f"Task '{task.title}' moved to Backlog due to overdue date.", 'warning')
+            flash_unique(f"Task '{task.title}' moved to Backlog due to overdue date.", 'warning')
             
 @miniadmin_routes.route('/miniadmin/projects', methods=['GET'])
 @login_required
@@ -245,7 +247,7 @@ def move_task(task_id):
     task.status = new_status
 
     db.session.commit()
-    flash(f'Task moved to {new_status} successfully!', 'success')
+    flash_unique(f'Task moved to {new_status} successfully!', 'success', persistent=False)
     return redirect(url_for('miniadmin_routes.view_project_tasks', project_id=task.project_id))
 
 @miniadmin_routes.route('/miniadmin/projects/tasks/add/<int:project_id>', methods=['GET', 'POST'])
@@ -268,7 +270,7 @@ def add_task(project_id):
         
         db.session.add(new_task)
         db.session.commit()
-        flash('Task added successfully!', 'success')
+        flash_unique('Task added successfully!', 'success', persistent=False)
         return redirect(url_for('miniadmin_routes.view_project_tasks', project_id=project_id))
 
     return render_template('miniadmin/add_task.html', project=project)
@@ -290,7 +292,7 @@ def edit_task(task_id):
         task.due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date() 
 
         db.session.commit()
-        flash('Task updated successfully!', 'success')
+        flash_unique('Task updated successfully!', 'success', persistent=False)
         return redirect(url_for('miniadmin_routes.view_project_tasks', project_id=task.project_id))
 
     return render_template('miniadmin/edit_task.html', task=task)
@@ -306,7 +308,7 @@ def delete_task(task_id):
     db.session.delete(task)
     db.session.commit()
 
-    flash('Task deleted successfully!', 'success')
+    flash_unique('Task deleted successfully!', 'success', persistent=False)
     return redirect(url_for('miniadmin_routes.view_project_tasks', project_id=task.project_id))
 
 @miniadmin_routes.route('/miniadmin/projects/delete/<int:project_id>', methods=['POST'])
@@ -319,7 +321,7 @@ def delete_project(project_id):
     project = Project.query.get_or_404(project_id)
     db.session.delete(project)
     db.session.commit()
-    flash(f"Project '{project.title}' has been deleted.", 'success')
+    flash_unique(f"Project '{project.title}' has been deleted.", 'success', persistent=False)
     return redirect(url_for('miniadmin_routes.view_projects'))
 
 @miniadmin_routes.route('/miniadmin/my-projects/delete/<int:project_id>', methods=['POST'])
@@ -332,13 +334,13 @@ def delete_miniadmin_project(project_id):
     project = MiniAdminProject.query.filter_by(id=project_id, miniadmin_id=current_user.id).first()
 
     if not project:
-        flash('Project not found or unauthorized access.', 'danger')
+        flash_unique('Project not found or unauthorized access.', 'danger', persistent=False)
         return redirect(url_for('miniadmin_routes.my_projects'))
 
     db.session.delete(project)
     db.session.commit()
 
-    flash(f"Project '{project.title}' has been deleted.", 'success')
+    flash_unique(f"Project '{project.title}' has been deleted.", 'success', persistent=False)
     return redirect(url_for('miniadmin_routes.my_projects'))
 
 
@@ -373,7 +375,7 @@ def create_task_for_miniadmin_project(project_id):
         db.session.add(new_task)
         db.session.commit()
 
-        flash('New task added successfully!', 'success')
+        flash_unique('New task added successfully!', 'success', persistent=False)
         return redirect(url_for('miniadmin_routes.view_tasks_for_miniadmin_project', project_id=project.id))
 
     return render_template('miniadmin/add_task_for_project.html', project=project)
@@ -391,7 +393,11 @@ def edit_task_for_miniadmin_project(project_id, task_id):
         task.due_date = datetime.strptime(request.form['due_date'], '%Y-%m-%d')
 
         db.session.commit()
-        flash('Task updated successfully!', 'success')
+        flash_unique('Task updated successfully!', 'success', persistent=False)
+        flash(
+            f"Task '{task.title}' has been moved to {task.status} due to overdue date.",
+            'warning' if task.due_date.date() < datetime.now().date() else 'success'
+        )
         return redirect(url_for('miniadmin_routes.view_tasks_for_miniadmin_project', project_id=project_id))
 
     return render_template('miniadmin/edit_task_for_project.html', task=task, project=project)
@@ -405,7 +411,7 @@ def delete_task_for_miniadmin_project(project_id, task_id):
     db.session.delete(task)
     db.session.commit()
     
-    flash('Task deleted successfully!', 'success')
+    flash_unique('Task deleted successfully!', 'success', persistent=False)
     return redirect(url_for('miniadmin_routes.view_tasks_for_miniadmin_project', project_id=project_id))
 
 
@@ -444,5 +450,5 @@ def move_task_status(project_id, task_id):
     
     db.session.commit()
 
-    flash(f'Task moved to {new_status} successfully!', 'success')
+    flash_unique(f'Task moved to {new_status} successfully!', 'success', persistent=False)
     return redirect(url_for('miniadmin_routes.view_tasks_for_miniadmin_project', project_id=project_id))
