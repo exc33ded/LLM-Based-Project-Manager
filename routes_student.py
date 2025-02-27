@@ -30,7 +30,7 @@ os.environ["LANGSMITH_PROJECT"] = os.environ.get("LANGSMITH_PROJECT", "")
 os.environ["LANGCHAIN_API_KEY"] = os.environ.get("LANGCHAIN_API_KEY", "")
 os.environ["GOOGLE_API_KEY"] = os.environ.get("GOOGLE_API_KEY", "")
 
-chat_model = ChatGoogleGenerativeAI(model="gemini-pro")
+chat_model = ChatGoogleGenerativeAI(model="gemini-2.0-flash-thinking-exp-01-21")
 
 memory_store = {}
 
