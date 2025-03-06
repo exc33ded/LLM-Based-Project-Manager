@@ -38,7 +38,7 @@ def render_markdown(content):
     return markdown.markdown(content)
 
 # Buffer memory configuration (keeps the last N messages)
-BUFFER_SIZE = 40  
+BUFFER_SIZE = 20
 
 def check_student_role(current_user):
     if current_user.role != 'student':
@@ -598,15 +598,3 @@ def change_assigned_task_status(task_id):
 
     flash_unique(f"Task status updated to '{new_status}'", 'success', persistent=False)
     return redirect(url_for('student_routes.view_assigned_tasks', project_id=project_id))
-
-
-
-
-
-
-
-
-
-
-
-

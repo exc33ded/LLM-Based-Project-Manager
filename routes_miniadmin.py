@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from utils.task_generation import generate_dynamic_coding_tasks
 from utils.no_again_flash import flash_unique
+import json
 
 miniadmin_routes = Blueprint('miniadmin_routes', __name__)
 
@@ -88,6 +89,7 @@ def create_project():
         title = request.form.get('project_name')  
         description = request.form.get('project_summary')  
         assigned_students = request.form.getlist('assigned_students')
+        generate_ai_tasks = request.form.get("generate_ai_tasks") == "on"
 
         if not title or not description:
             flash("Project name and summary are required!", "danger")
@@ -113,8 +115,27 @@ def create_project():
 
         db.session.commit()
 
+        if generate_ai_tasks:
+            try:
+                task_data = json.loads(generate_dynamic_coding_tasks(description))
+                # print(task_data)
+                for task_title, task_details in task_data.items():
+                    task = MiniAdminProjectTask(
+                        title=task_title,
+                        description=task_details['Task Description'],
+                        due_date=datetime.strptime(task_details['Date'], '%Y-%m-%d'),
+                        status='In Progress',
+                        miniadmin_project_id=new_project.id
+                    )
+                    db.session.add(task)
+                db.session.commit()
+                flash_unique("Project and AI-generated tasks created successfully!", "success", persistent=False)
+            
+            except Exception as e:
+                flash_unique(f"AI Task generation failed: {e}", "danger", persistent=False)
+
         flash_unique(f"Project '{title}' created successfully!", "success", persistent=False)
-        return redirect(url_for('miniadmin_routes.view_projects'))
+        return redirect(url_for('miniadmin_routes.my_projects'))
 
     return render_template('miniadmin/create_project.html', students=students)
 

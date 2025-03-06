@@ -196,6 +196,9 @@
 <a href="{{ url_for('miniadmin_routes.create_task_for_miniadmin_project', project_id=project.id) }}"
     class="bg-green-600 text-white px-6 py-3 rounded-lg mt-4 hover:bg-green-700">Add New Task</a>
 <br>
+<br>
+<a href="{{ url_for('miniadmin_routes.my_projects') }}"
+    class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700">Go Back</a></a>
 <script>
     function confirmDelete(url) {
         if (confirm("Are you sure you want to delete this task?")) {
@@ -219,32 +222,39 @@
 
 <style>
     .task-category .bg-white {
-    position: relative;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.3s ease; /* Smooth transition for height and other properties */
-    min-height: 150px; /* Set a minimum height for the card */
-}
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        /* Smooth transition for height and other properties */
+        min-height: 150px;
+        /* Set a minimum height for the card */
+    }
 
-.task-category .summary-section {
-    max-height: 0; /* Initially hide the summary section */
-    opacity: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease, opacity 0.3s ease; /* Smooth transition for expansion */
-}
+    .task-category .summary-section {
+        max-height: 0;
+        /* Initially hide the summary section */
+        opacity: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+        /* Smooth transition for expansion */
+    }
 
-.task-category .bg-white:hover .summary-section {
-    max-height: 500px; /* Adjust this value based on the maximum expected height */
-    opacity: 1;
-}
+    .task-category .bg-white:hover .summary-section {
+        max-height: 500px;
+        /* Adjust this value based on the maximum expected height */
+        opacity: 1;
+    }
 
-.task-category .bg-white .buttons-container {
-    margin-top: 16px; /* Space between the summary and buttons */
-}
+    .task-category .bg-white .buttons-container {
+        margin-top: 16px;
+        /* Space between the summary and buttons */
+    }
 
-.task-category .bg-white form {
-    margin-top: 16px; /* Space between the buttons and the form */
-}
+    .task-category .bg-white form {
+        margin-top: 16px;
+        /* Space between the buttons and the form */
+    }
 </style>
 
 {% endblock %}

@@ -727,7 +727,7 @@ def update_miniadmin_project_create(miniadmin_id):
         selected_student_ids = request.form.getlist('students') 
         generate_ai_tasks = request.form.get("generate_ai_tasks") == "on"
 
-        print(f"🔍 Selected Students: {selected_student_ids}")  
+        # print(f"🔍 Selected Students: {selected_student_ids}")  
 
         if not title or not description:
             flash_unique('Title and Description are required.', 'danger')
@@ -747,7 +747,7 @@ def update_miniadmin_project_create(miniadmin_id):
 
             db.session.commit() 
 
-            print(f"✅ Students assigned to project {new_project.id}: {selected_student_ids}")
+            # print(f"✅ Students assigned to project {new_project.id}: {selected_student_ids}")
 
         if generate_ai_tasks:
             try:
