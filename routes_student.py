@@ -13,6 +13,8 @@ from langchain_core.messages import HumanMessage, AIMessage
 import markdown
 from dotenv import load_dotenv
 from utils.no_again_flash import flash_unique
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 load_dotenv()
 
@@ -40,19 +42,19 @@ def render_markdown(content):
 # Buffer memory configuration (keeps the last N messages)
 BUFFER_SIZE = 20
 
-def check_student_role(current_user):
-    if current_user.role != 'student':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
-    return None
+def student_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if current_user.role != 'student':
+            flash_unique('Unauthorized access', 'danger', persistent=False)
+            return redirect(url_for('auth_routes.login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @student_routes.route('/student/dashboard', methods=['GET', 'POST'])
 @login_required
+@student_required
 def student_dashboard():
-    result = check_student_role(current_user)
-    if result:
-        return result
-    
     # Get the student's projects
     projects = Project.query.filter_by(student_id=current_user.id).all()
 
@@ -112,22 +114,16 @@ def student_dashboard():
 
 @student_routes.route('/student/projects')
 @login_required
+@student_required
 def view_projects():
-    result = check_student_role(current_user)
-    if result:
-        return result
-    
     user = User.query.get_or_404(current_user.id)
     projects = Project.query.filter_by(student_id=current_user.id).all()
     return render_template('student/view_projects.html', projects=projects, user=user)
 
 @student_routes.route('/student/projects/add', methods=['GET', 'POST'])
 @login_required
+@student_required
 def add_project():
-    result = check_student_role(current_user)
-    if result:
-        return result
-
     if request.method == 'POST':
         title = request.form['title']
         start_date_str = request.form['start_date']
@@ -191,11 +187,8 @@ def add_project():
 
 @student_routes.route('/student/projects/edit/<int:project_id>', methods=['GET', 'POST'])
 @login_required
+@student_required
 def edit_project(project_id):
-    result = check_student_role(current_user)
-    if result:
-        return result
-
     project = Project.query.get_or_404(project_id)
 
     if project.student_id != current_user.id:
@@ -244,11 +237,8 @@ def edit_project(project_id):
 
 @student_routes.route('/student/projects/delete/<int:project_id>', methods=['POST'])
 @login_required
+@student_required
 def delete_project(project_id):
-    result = check_student_role(current_user)
-    if result:
-        return result
-
     project = Project.query.get_or_404(project_id)
 
     if project.student_id != current_user.id:
@@ -273,11 +263,8 @@ def delete_project(project_id):
 
 @student_routes.route('/student/projects/archive')
 @login_required
+@student_required
 def project_archive():
-    result = check_student_role(current_user)
-    if result:
-        return result
-    
     if not current_user.is_verified:
         flash_unique("Only verified students can access the project archive.", "info", persistent=False)
         return redirect(url_for('student_routes.view_projects'))
@@ -341,6 +328,7 @@ def check_task_status(task):
             
 @student_routes.route('/project/<int:project_id>/tasks', methods=['GET', 'POST'])
 @login_required
+@student_required
 def view_tasks(project_id):
     project = Project.query.get_or_404(project_id)
 
@@ -390,7 +378,7 @@ def view_tasks(project_id):
 
             # Get AI response based on the history and current user message
             ai_response = chat_model.invoke([HumanMessage(content=prompt)]).content or \
-                          f"Here’s a bit more information about the project: {project.summary}."
+                          f"Here's a bit more information about the project: {project.summary}."
 
             # Add AI response to memory buffer
             add_message_to_buffer(memory, 'AI', render_markdown(ai_response))
@@ -457,6 +445,7 @@ def save_chat(project_id):
 
 @student_routes.route('/project/<int:project_id>/tasks/add', methods=['GET', 'POST'])
 @login_required
+@student_required
 def add_task(project_id):
     project = Project.query.get_or_404(project_id)
 
@@ -480,6 +469,7 @@ def add_task(project_id):
 
 @student_routes.route('/task/<int:task_id>/edit', methods=['GET', 'POST'])
 @login_required
+@student_required
 def edit_task(task_id):
     task = Task.query.get_or_404(task_id)
     project_id = task.project_id
@@ -508,6 +498,7 @@ def edit_task(task_id):
 
 @student_routes.route('/task/<int:task_id>/change_status', methods=['POST'])
 @login_required
+@student_required
 def change_task_status(task_id):
     task = Task.query.get_or_404(task_id)
     project_id = task.project_id
@@ -527,6 +518,7 @@ def change_task_status(task_id):
 
 @student_routes.route('/task/<int:task_id>/delete', methods=['POST'])
 @login_required
+@student_required
 def delete_task(task_id):
     task = Task.query.get_or_404(task_id)
     project_id = task.project_id
@@ -544,11 +536,8 @@ def delete_task(task_id):
 # ------------------  Assigned Project Working  -----------------------------------
 @student_routes.route('/assigned-projects')
 @login_required
+@student_required
 def assigned_projects():
-    result = check_student_role(current_user)
-    if result:
-        return result
-    
     projects = db.session.query(MiniAdminProject, db.func.count(MiniAdminProjectStudent.student_id).label('student_count'))\
     .join(MiniAdminProjectStudent, MiniAdminProject.id == MiniAdminProjectStudent.project_id)\
     .filter(MiniAdminProjectStudent.student_id == current_user.id)\
@@ -558,6 +547,7 @@ def assigned_projects():
     
 @student_routes.route('/assigned-projects/<int:project_id>/tasks')
 @login_required
+@student_required
 def view_assigned_tasks(project_id):
     project = MiniAdminProject.query.get_or_404(project_id)
 
@@ -581,6 +571,7 @@ def view_assigned_tasks(project_id):
 
 @student_routes.route('/assigned-projects/task/<int:task_id>/change_status', methods=['POST'])
 @login_required
+@student_required
 def change_assigned_task_status(task_id):
     task = MiniAdminProjectTask.query.get_or_404(task_id)
     project_id = task.miniadmin_project_id
@@ -598,3 +589,34 @@ def change_assigned_task_status(task_id):
 
     flash_unique(f"Task status updated to '{new_status}'", 'success', persistent=False)
     return redirect(url_for('student_routes.view_assigned_tasks', project_id=project_id))
+
+@student_routes.route('/student/profile', methods=['GET', 'POST'])
+@login_required
+@student_required
+def student_profile():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if name:
+            current_user.name = name
+        
+        if new_password:
+            if new_password != confirm_password:
+                flash_unique('Passwords do not match!', 'danger', persistent=False)
+                return redirect(url_for('student_routes.student_profile'))
+            
+            if len(new_password) < 6:
+                flash_unique('Password must be at least 6 characters long!', 'danger', persistent=False)
+                return redirect(url_for('student_routes.student_profile'))
+                
+            # Hash the new password before saving
+            hashed_password = generate_password_hash(new_password, method='pbkdf2:sha256')
+            current_user.password = hashed_password
+        
+        db.session.commit()
+        flash_unique('Profile updated successfully!', 'success', persistent=False)
+        return redirect(url_for('student_routes.student_profile'))
+
+    return render_template('student/profile.html', user=current_user)
