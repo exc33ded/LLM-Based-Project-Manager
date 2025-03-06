@@ -7,16 +7,24 @@ from datetime import datetime
 from utils.task_generation import generate_dynamic_coding_tasks
 from utils.no_again_flash import flash_unique
 import json
+from functools import wraps
+from werkzeug.security import generate_password_hash
 
 miniadmin_routes = Blueprint('miniadmin_routes', __name__)
 
+def miniadmin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if current_user.role != 'mini-admin':
+            flash_unique('Access denied.', 'danger', persistent=False)
+            return redirect(url_for('auth_routes.login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @miniadmin_routes.route('/dashboard', methods=['GET', 'POST'])
 @login_required
+@miniadmin_required
 def miniadmin_dashboard():
-    if current_user.role != 'mini-admin':
-        flash_unique('Access denied.', 'danger', persistent=False)
-        return redirect(url_for('auth_routes.login'))
-
     # Get assigned students for the mini-admin
     assigned_students = current_user.assigned_students
     assigned_students_count = len(assigned_students)
@@ -57,11 +65,8 @@ def miniadmin_dashboard():
 
 @miniadmin_routes.route('/my-projects')
 @login_required
+@miniadmin_required
 def my_projects():
-    if current_user.role != 'mini-admin':
-        flash_unique('Access denied.', 'danger', persistent=False)
-        return redirect(url_for('auth_routes.login'))
-
     # Fetch all projects for the current mini-admin
     projects = MiniAdminProject.query.filter_by(miniadmin_id=current_user.id).all()
 
@@ -77,11 +82,8 @@ def my_projects():
 
 @miniadmin_routes.route('/create-project', methods=['GET', 'POST'])
 @login_required
+@miniadmin_required
 def create_project():
-    if current_user.role != 'mini-admin':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
-
     # Fetch students assigned to this mini-admin
     students = User.query.filter_by(role='student').filter_by(miniadmin_id=current_user.id).all()
 
@@ -141,12 +143,9 @@ def create_project():
 
 @miniadmin_routes.route('/miniadmin/project/<int:project_id>/assign', methods=['GET', 'POST'])
 @login_required
+@miniadmin_required
 def assign_student(project_id):
     project = MiniAdminProject.query.get_or_404(project_id)
-    
-    # Ensure user is a mini-admin and the project belongs to them
-    if current_user.role != 'mini-admin' or current_user.id != project.miniadmin_id:
-        return redirect(url_for('home'))
     
     # Get students assigned to the current mini-admin
     students = User.query.filter_by(role='student', miniadmin_id=current_user.id).all()
@@ -199,10 +198,8 @@ def check_task_status(task):
             
 @miniadmin_routes.route('/miniadmin/projects', methods=['GET'])
 @login_required
+@miniadmin_required
 def view_projects():
-    if current_user.role != 'mini-admin':
-        flash('Access denied.', 'danger')
-        
     assigned_students = current_user.assigned_students  
     student_projects = [(student, len(student.projects)) for student in assigned_students]
 
@@ -210,11 +207,8 @@ def view_projects():
     
 @miniadmin_routes.route('/miniadmin/projects/<int:user_id>')
 @login_required
+@miniadmin_required
 def view_student_projects(user_id):
-    if current_user.role != 'mini-admin':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
-
     user = User.query.get_or_404(user_id)
     projects = Project.query.filter_by(student_id=user_id).all()
     
@@ -223,11 +217,8 @@ def view_student_projects(user_id):
 
 @miniadmin_routes.route('/miniadmin/projects/<int:project_id>/tasks', methods=['GET'])
 @login_required
+@miniadmin_required
 def view_project_tasks(project_id):
-    if current_user.role != 'mini-admin':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
-
     user_id = request.args.get('user_id')
     print(user_id)
     user = User.query.get_or_404(user_id) if user_id else None
@@ -258,11 +249,8 @@ def view_project_tasks(project_id):
 
 @miniadmin_routes.route('/miniadmin/projects/tasks/move/<int:task_id>', methods=['POST'])
 @login_required
+@miniadmin_required
 def move_task(task_id):
-    if current_user.role != 'mini-admin':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
-
     task = Task.query.get_or_404(task_id)
     new_status = request.form.get('status')  
     task.status = new_status
@@ -273,11 +261,8 @@ def move_task(task_id):
 
 @miniadmin_routes.route('/miniadmin/projects/tasks/add/<int:project_id>', methods=['GET', 'POST'])
 @login_required
+@miniadmin_required
 def add_task(project_id):
-    if current_user.role != 'mini-admin':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
-
     project = Project.query.get_or_404(project_id)  
 
     if request.method == 'POST':
@@ -298,11 +283,8 @@ def add_task(project_id):
 
 @miniadmin_routes.route('/miniadmin/projects/tasks/edit/<int:task_id>', methods=['GET', 'POST'])
 @login_required
+@miniadmin_required
 def edit_task(task_id):
-    if current_user.role != 'mini-admin':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
-
     task = Task.query.get_or_404(task_id)
 
     if request.method == 'POST':
@@ -320,11 +302,8 @@ def edit_task(task_id):
 
 @miniadmin_routes.route('/miniadmin/projects/tasks/delete/<int:task_id>', methods=['POST'])
 @login_required
+@miniadmin_required
 def delete_task(task_id):
-    if current_user.role != 'mini-admin':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
-
     task = Task.query.get_or_404(task_id)
     db.session.delete(task)
     db.session.commit()
@@ -334,11 +313,8 @@ def delete_task(task_id):
 
 @miniadmin_routes.route('/miniadmin/projects/delete/<int:project_id>', methods=['POST'])
 @login_required
+@miniadmin_required
 def delete_project(project_id):
-    if current_user.role != 'mini-admin':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
-
     project = Project.query.get_or_404(project_id)
     db.session.delete(project)
     db.session.commit()
@@ -347,11 +323,8 @@ def delete_project(project_id):
 
 @miniadmin_routes.route('/miniadmin/my-projects/delete/<int:project_id>', methods=['POST'])
 @login_required
+@miniadmin_required
 def delete_miniadmin_project(project_id):
-    if current_user.role != 'mini-admin':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
-
     project = MiniAdminProject.query.filter_by(id=project_id, miniadmin_id=current_user.id).first()
 
     if not project:
@@ -376,6 +349,7 @@ def miniadmin_logout():
 
 @miniadmin_routes.route('/miniadmin/project/<int:project_id>/task/create', methods=['GET', 'POST'])
 @login_required
+@miniadmin_required
 def create_task_for_miniadmin_project(project_id):
     project = MiniAdminProject.query.get_or_404(project_id)
 
@@ -404,6 +378,7 @@ def create_task_for_miniadmin_project(project_id):
 
 @miniadmin_routes.route('/miniadmin/project/<int:project_id>/task/edit/<int:task_id>', methods=['GET', 'POST'])
 @login_required
+@miniadmin_required
 def edit_task_for_miniadmin_project(project_id, task_id):
     task = MiniAdminProjectTask.query.get_or_404(task_id)
     project = MiniAdminProject.query.get_or_404(project_id)
@@ -426,6 +401,7 @@ def edit_task_for_miniadmin_project(project_id, task_id):
 
 @miniadmin_routes.route('/miniadmin/project/<int:project_id>/task/delete/<int:task_id>', methods=['POST'])
 @login_required
+@miniadmin_required
 def delete_task_for_miniadmin_project(project_id, task_id):
     task = MiniAdminProjectTask.query.get_or_404(task_id)
 
@@ -438,6 +414,7 @@ def delete_task_for_miniadmin_project(project_id, task_id):
 
 @miniadmin_routes.route('/miniadmin/project/<int:project_id>/tasks', methods=['GET'])
 @login_required
+@miniadmin_required
 def view_tasks_for_miniadmin_project(project_id):
     project = MiniAdminProject.query.get_or_404(project_id)
     
@@ -460,11 +437,8 @@ def view_tasks_for_miniadmin_project(project_id):
 
 @miniadmin_routes.route('/miniadmin/project/<int:project_id>/task/move/<int:task_id>', methods=['POST'])
 @login_required
+@miniadmin_required
 def move_task_status(project_id, task_id):
-    if current_user.role != 'mini-admin':
-        flash('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
-    
     task = MiniAdminProjectTask.query.get_or_404(task_id)
     new_status = request.form.get('status')  
     task.status = new_status
@@ -473,3 +447,34 @@ def move_task_status(project_id, task_id):
 
     flash_unique(f'Task moved to {new_status} successfully!', 'success', persistent=False)
     return redirect(url_for('miniadmin_routes.view_tasks_for_miniadmin_project', project_id=project_id))
+
+@miniadmin_routes.route('/miniadmin/profile', methods=['GET', 'POST'])
+@login_required
+@miniadmin_required
+def miniadmin_profile():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if name:
+            current_user.name = name
+        
+        if new_password:
+            if new_password != confirm_password:
+                flash_unique('Passwords do not match!', 'danger', persistent=False)
+                return redirect(url_for('miniadmin_routes.miniadmin_profile'))
+            
+            if len(new_password) < 6:
+                flash_unique('Password must be at least 6 characters long!', 'danger', persistent=False)
+                return redirect(url_for('miniadmin_routes.miniadmin_profile'))
+                
+            # Hash the new password before saving
+            hashed_password = generate_password_hash(new_password, method='pbkdf2:sha256')
+            current_user.password = hashed_password
+        
+        db.session.commit()
+        flash_unique('Profile updated successfully!', 'success', persistent=False)
+        return redirect(url_for('miniadmin_routes.miniadmin_profile'))
+
+    return render_template('miniadmin/profile.html', user=current_user)
