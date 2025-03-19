@@ -246,6 +246,11 @@ def delete_project(project_id):
         return redirect(url_for('student_routes.view_projects'))
 
     try:
+        if project.synopsis_filename:
+            synopsis_path = os.path.join(UPLOAD_FOLDER, project.synopsis_filename)
+            if os.path.exists(synopsis_path):
+                os.remove(synopsis_path)
+                
         LongTermMemory.query.filter_by(project_id=project_id).delete()
 
         db.session.delete(project)

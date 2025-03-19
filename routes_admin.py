@@ -436,6 +436,17 @@ def delete_project(project_id):
         return redirect(url_for('auth_routes.login'))
 
     project = Project.query.get_or_404(project_id)
+
+    try:
+        if project.synopsis_filename:
+            synopsis_path = os.path.join(UPLOAD_FOLDER, project.synopsis_filename)
+            if os.path.exists(synopsis_path):
+               os.remove(synopsis_path)
+            else:
+                flash_unique(f"Synopsis file '{project.synopsis_filename}' not found.", 'warning', persistent=False)
+    except Exception as e:
+        flash_unique(f"Error deleting synopsis file: {str(e)}", 'danger', persistent=False)
+
     db.session.delete(project)
     db.session.commit()
     flash_unique(f"Project '{project.title}' has been deleted.", 'success', persistent=False)

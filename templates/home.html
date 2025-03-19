@@ -3,93 +3,299 @@
 {% block content %}
 
 <style>
-/* Smooth Light Background */
+/* Professional Background */
 body {
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    overflow: hidden;
+    background: linear-gradient(135deg, #f8f7f4 0%, #efeee9 100%);
+    overflow-x: hidden;
     position: relative;
-    height: 100vh;
+    min-height: 100vh;
+    color: #2d3748;
 }
 
-/* Mouse Shadow Effect */
+/* Subtle Stars Background */
+.stars {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.star {
+    position: absolute;
+    background: #94a3b8;  /* Darker color for better visibility */
+    border-radius: 50%;
+    opacity: 0;
+    animation: twinkle var(--duration) infinite;
+    box-shadow: 0 0 2px #94a3b8;  /* Added glow effect */
+}
+
+@keyframes twinkle {
+    0% { opacity: 0; transform: scale(0.5); }
+    50% { opacity: 0.4; transform: scale(1); }  /* Increased opacity */
+    100% { opacity: 0; transform: scale(0.5); }
+}
+
+/* Refined Mouse Shadow */
 #mouse-shadow {
     position: fixed;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(114, 170, 223, 0.2) 0%, rgba(0, 0, 0, 0) 80%);
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, 
+        rgba(148, 163, 184, 0.3) 0%,  /* Increased opacity */
+        rgba(148, 163, 184, 0.2) 30%,
+        rgba(0, 0, 0, 0) 70%
+    );
     pointer-events: none;
     border-radius: 50%;
-    filter: blur(15px);
+    filter: blur(20px);
     transform: translate(-50%, -50%);
-    transition: transform 0.1s ease-out;
+    transition: all 0.2s ease-out;
+    z-index: 1;
+    mix-blend-mode: soft-light;  /* Changed blend mode */
+}
+
+/* Professional Overlay */
+.content-overlay {
+    position: relative;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    margin: 2rem;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 .stat-box {
-    transition: transform 0.3s ease-in-out, color 0.3s ease-in-out;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 .stat-box:hover {
-    transform: scale(1.1);
-    color: #2563eb; 
+    transform: translateY(-10px) scale(1.05);
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(66, 153, 225, 0.3);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
+.feature-card {
+    position: relative;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: all 0.4s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
 
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(66, 153, 225, 0.1),
+        transparent
+    );
+    transition: 0.5s;
+}
+
+.feature-card:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.feature-card:hover::before {
+    left: 100%;
+}
+
+.animate-on-scroll {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s ease-out;
+}
+
+.animate-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+.floating-animation {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Professional Typography */
+.heading-gradient {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
 </style>
-<div class="relative flex flex-col items-center justify-center min-h-screen bg-white text-center overflow-hidden">
-    
-    <!-- Moving Background -->
-    <div id="background-animation" class="absolute inset-0 pointer-events-none"></div>
 
-    <!-- Main Content -->
-    <h1 class="text-5xl font-bold text-gray-800 mt-12">Welcome to Intelligent Project Manager for AMU</h1>
-    <p class="text-lg text-gray-600 mt-4 max-w-lg">
-        Organize, track, and manage your projects with ease. Explore key features below or get started.
-    </p>
+<div class="stars" id="stars"></div>
 
-    <div class="flex space-x-10 mt-12 text-center">
-        <div class="stat-box">
-            <h3 class="text-4xl font-bold text-gray-800">
-                <span id="projects-completed">{{ project_count }}+</span>
-            </h3>
-            <p class="text-gray-600">Projects Completed</p>
-        </div>
-        <div class="stat-box">
-            <h3 class="text-4xl font-bold text-gray-800">
-                <span id="active-users">{{ user_count }}+</span>
-            </h3>
-            <p class="text-gray-600">Active Users</p>
-        </div>
-    </div>
-    
+<div class="relative flex flex-col items-center justify-center min-h-screen text-center z-10">
+    <div class="content-overlay">
+        <!-- Main Content -->
+        <h1 class="text-6xl font-bold heading-gradient mt-12 animate-on-scroll floating-animation">
+            Welcome to Intelligent Project Manager for AMU
+        </h1>
+        <p class="text-xl text-gray-600 mt-6 max-w-2xl animate-on-scroll">
+            Organize, track, and manage your projects with enterprise-grade tools and insights.
+        </p>
 
-    <!-- Features Section with Hover Effects -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12 max-w-4xl">
-        <div class="p-6 bg-white rounded-lg shadow-lg transition transform hover:scale-105 hover:shadow-xl hover:bg-blue-100">
-            <h2 class="text-xl font-bold text-gray-700">Track Your Progress</h2>
-            <p class="text-gray-600 mt-2">Visual timelines and milestones keep your projects on track.</p>
+        <div class="flex space-x-16 mt-16 text-center">
+            <div class="stat-box animate-on-scroll">
+                <h3 class="text-5xl font-bold text-gray-800">
+                    <span class="counter" data-target="{{ project_count }}">0</span>+
+                </h3>
+                <p class="text-gray-600 text-lg mt-2">Projects Completed</p>
+            </div>
+            <div class="stat-box animate-on-scroll">
+                <h3 class="text-5xl font-bold text-gray-800">
+                    <span class="counter" data-target="{{ user_count }}">0</span>+
+                </h3>
+                <p class="text-gray-600 text-lg mt-2">Active Users</p>
+            </div>
         </div>
-        <div class="p-6 bg-white rounded-lg shadow-lg transition transform hover:scale-105 hover:shadow-xl hover:bg-blue-100">
-            <h2 class="text-xl font-bold text-gray-700">Collaborate with Teams</h2>
-            <p class="text-gray-600 mt-2">Team messaging, task assignments, and file sharing.</p>
-        </div>
-        <div class="p-6 bg-white rounded-lg shadow-lg transition transform hover:scale-105 hover:shadow-xl hover:bg-blue-100">
-            <h2 class="text-xl font-bold text-gray-700">Detailed Analytics</h2>
-            <p class="text-gray-600 mt-2">Monitor project metrics with detailed reports.</p>
+
+        <!-- Features Section -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-16 max-w-6xl px-4">
+            <div class="feature-card p-8 rounded-xl shadow-lg animate-on-scroll">
+                <h2 class="text-2xl font-bold text-gray-800">Track Your Progress</h2>
+                <p class="text-gray-600 mt-3">Enterprise-grade timeline tracking and milestone management.</p>
+            </div>
+            <div class="feature-card p-8 rounded-xl shadow-lg animate-on-scroll">
+                <h2 class="text-2xl font-bold text-gray-800">Collaborate with Teams</h2>
+                <p class="text-gray-600 mt-3">Secure team communication and resource management.</p>
+            </div>
+            <div class="feature-card p-8 rounded-xl shadow-lg animate-on-scroll">
+                <h2 class="text-2xl font-bold text-gray-800">Detailed Analytics</h2>
+                <p class="text-gray-600 mt-3">Advanced metrics and performance insights.</p>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        let shadow = document.createElement("div");
-        shadow.id = "mouse-shadow";
-        document.body.appendChild(shadow);
-    
-        document.addEventListener("mousemove", function (event) {
-            shadow.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`;
-        });
+document.addEventListener("DOMContentLoaded", function () {
+    // Create subtle stars
+    const starsContainer = document.getElementById('stars');
+    const numberOfStars = 75;  // Increased number of stars
+
+    for (let i = 0; i < numberOfStars; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        
+        // Random position
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        
+        // Slightly larger size range
+        const size = Math.random() * 2 + 1;  // Increased size
+        
+        // Varied animation duration
+        const duration = Math.random() * 3 + 2;  // Faster animation
+        
+        star.style.cssText = `
+            left: ${x}%;
+            top: ${y}%;
+            width: ${size}px;
+            height: ${size}px;
+            --duration: ${duration}s;
+        `;
+        
+        starsContainer.appendChild(star);
+    }
+
+    // Refined mouse shadow effect with more responsive movement
+    let shadow = document.createElement("div");
+    shadow.id = "mouse-shadow";
+    document.body.appendChild(shadow);
+
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let currentX = mouseX;
+    let currentY = mouseY;
+
+    document.addEventListener("mousemove", function (event) {
+        mouseX = event.clientX;
+        mouseY = event.clientY;
+        
+        // More immediate response
+        currentX = mouseX;
+        currentY = mouseY;
+        shadow.style.transform = `translate(${currentX}px, ${currentY}px)`;
     });
-    </script>
-    
+
+    // Scroll animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate-visible');
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.animate-on-scroll').forEach((element) => {
+        observer.observe(element);
+    });
+
+    // Counter animation with easing
+    const counters = document.querySelectorAll('.counter');
+    counters.forEach(counter => {
+        const target = parseInt(counter.getAttribute('data-target'));
+        const duration = 2000;
+        let startTime = null;
+
+        function easeOutQuart(x) {
+            return 1 - Math.pow(1 - x, 4);
+        }
+
+        function animate(currentTime) {
+            if (!startTime) startTime = currentTime;
+            const progress = Math.min((currentTime - startTime) / duration, 1);
+            const easedProgress = easeOutQuart(progress);
+            const current = Math.floor(target * easedProgress);
+            
+            counter.textContent = current;
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                counter.textContent = target;
+            }
+        }
+
+        requestAnimationFrame(animate);
+    });
+});
+</script>
+
 {% endblock %}

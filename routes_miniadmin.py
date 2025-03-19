@@ -10,6 +10,9 @@ import json
 from functools import wraps
 from werkzeug.security import generate_password_hash
 
+UPLOAD_FOLDER = 'static/uploads/synopsis'  
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 miniadmin_routes = Blueprint('miniadmin_routes', __name__)
 
 def miniadmin_required(f):
@@ -316,6 +319,17 @@ def delete_task(task_id):
 @miniadmin_required
 def delete_project(project_id):
     project = Project.query.get_or_404(project_id)
+
+    try:
+        if project.synopsis_filename:
+            synopsis_path = os.path.join(UPLOAD_FOLDER, project.synopsis_filename)
+            if os.path.exists(synopsis_path):
+               os.remove(synopsis_path)
+            else:
+                flash_unique(f"Synopsis file '{project.synopsis_filename}' not found.", 'warning', persistent=False)
+    except Exception as e:
+        flash_unique(f"Error deleting synopsis file: {str(e)}", 'danger', persistent=False)
+
     db.session.delete(project)
     db.session.commit()
     flash_unique(f"Project '{project.title}' has been deleted.", 'success', persistent=False)
