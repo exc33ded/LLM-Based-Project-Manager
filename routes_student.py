@@ -289,6 +289,14 @@ def get_archive_chatbot_html():
     # CSS styles for the archive chatbot
     chatbot_styles = """
     <style>
+        .archive-chatbot-wrapper {
+            position: relative;
+            margin: 0 auto;
+            width: 800px;  /* Default width */
+            min-width: 600px;  /* Minimum width */
+            max-width: 95vw;  /* Maximum width */
+        }
+        
         .archive-chatbot-container {
             border: 1px solid #ddd;
             border-radius: 10px;
@@ -297,7 +305,42 @@ def get_archive_chatbot_html():
             flex-direction: column;
             height: 500px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            width: 100%;
+            background: white;
+        }
+        
+        .resize-handle {
+            position: absolute;
+            right: -5px;
+            top: 0;
+            bottom: 0;
+            width: 10px;
+            cursor: ew-resize;
+            background: transparent;
+            z-index: 100;
+            touch-action: none;
+        }
+        
+        .resize-handle:hover {
+            background: rgba(0, 123, 255, 0.1);
+        }
+        
+        .resize-handle::after {
+            content: '';
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 2px;
+            height: 20px;
+            background: #007bff;
+            border-radius: 1px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .resize-handle:hover::after {
+            opacity: 1;
         }
         
         .archive-chatbot-header {
@@ -319,10 +362,11 @@ def get_archive_chatbot_html():
             flex-direction: column;
             gap: 15px;
             background-color: #f9f9f9;
+            max-width: 100%;
         }
         
         .archive-bot-message, .archive-user-message {
-            max-width: 80%;
+            max-width: 95%;
             padding: 10px 15px;
             border-radius: 10px;
             animation: fadeIn 0.3s ease-in-out;
@@ -370,14 +414,12 @@ def get_archive_chatbot_html():
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Make links in chat messages stand out */
         .archive-bot-message a {
             color: #0056b3;
             text-decoration: underline;
             font-weight: bold;
         }
         
-        /* Style for project cards in responses */
         .project-search-card {
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -394,29 +436,32 @@ def get_archive_chatbot_html():
     """
     
     chatbot_html = chatbot_styles + """
-    <div class="archive-chatbot-container">
-        <div class="archive-chatbot-header">
-            <h4>Project Search Assistant</h4>
-            <p class="text-muted">Ask me to find projects by name, category, student, or content</p>
-        </div>
-        <div class="archive-chatbot-messages" id="archiveChatMessages">
-            <div class="archive-bot-message">
-                <div class="message-content">
-                    Hello! I can help you search through the project archive. Try asking me something like:
-                    <ul>
-                        <li>Find projects about machine learning</li>
-                        <li>Show me projects by student John</li>
-                        <li>Which projects use Python?</li>
-                        <li>Find projects with web development tasks</li>
-                    </ul>
+    <div class="archive-chatbot-wrapper">
+        <div class="resize-handle"></div>
+        <div class="archive-chatbot-container">
+            <div class="archive-chatbot-header">
+                <h4>Project Search Assistant</h4>
+                <p class="text-muted">Ask me to find projects by name, category, student, or content</p>
+            </div>
+            <div class="archive-chatbot-messages" id="archiveChatMessages">
+                <div class="archive-bot-message">
+                    <div class="message-content">
+                        Hello! I can help you search through the project archive. Try asking me something like:
+                        <ul>
+                            <li>Find projects about machine learning</li>
+                            <li>Show me projects by student John</li>
+                            <li>Which projects use Python?</li>
+                            <li>Find projects with web development tasks</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="archive-chatbot-input">
-            <input type="text" id="archiveChatInput" class="form-control" placeholder="Search for projects...">
-            <button id="archiveChatSendBtn" class="btn btn-primary">
-                <i class="fas fa-search"></i>
-            </button>
+            <div class="archive-chatbot-input">
+                <input type="text" id="archiveChatInput" class="form-control" placeholder="Search for projects...">
+                <button id="archiveChatSendBtn" class="btn btn-primary">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
         </div>
     </div>
     
@@ -425,6 +470,55 @@ def get_archive_chatbot_html():
             const inputField = document.getElementById('archiveChatInput');
             const sendButton = document.getElementById('archiveChatSendBtn');
             const messagesContainer = document.getElementById('archiveChatMessages');
+            const wrapper = document.querySelector('.archive-chatbot-wrapper');
+            const resizeHandle = document.querySelector('.resize-handle');
+            
+            // Resize functionality
+            let isResizing = false;
+            let startX;
+            let startWidth;
+            let minWidth = 600;
+            let maxWidth = window.innerWidth * 0.95;
+            
+            function startResize(e) {
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = wrapper.offsetWidth;
+                
+                // Add event listeners
+                document.addEventListener('mousemove', handleResize);
+                document.addEventListener('mouseup', stopResize);
+                
+                // Prevent text selection while resizing
+                e.preventDefault();
+            }
+            
+            function handleResize(e) {
+                if (!isResizing) return;
+                
+                const width = startWidth + (e.clientX - startX);
+                
+                // Constrain width between min and max
+                if (width >= minWidth && width <= maxWidth) {
+                    wrapper.style.width = width + 'px';
+                }
+            }
+            
+            function stopResize() {
+                isResizing = false;
+                
+                // Remove event listeners
+                document.removeEventListener('mousemove', handleResize);
+                document.removeEventListener('mouseup', stopResize);
+            }
+            
+            // Add resize event listener
+            resizeHandle.addEventListener('mousedown', startResize);
+            
+            // Update max width on window resize
+            window.addEventListener('resize', function() {
+                maxWidth = window.innerWidth * 0.95;
+            });
             
             // Function to add a message to the chat
             function addMessage(content, isUser) {
@@ -1035,24 +1129,21 @@ def archive_search_chatbot():
     
     # Prepare system message for better context
     system_message = """You are an advanced AI project search assistant powered by Google's Gemini model.
-    Your capabilities include:
-    1. Natural language understanding and processing
-    2. Semantic search and matching
-    3. Context-aware responses
-    4. Intelligent project categorization
-    5. Detailed project analysis
-    6. Conversational memory and context retention
-    7. Adaptive response formatting
-    8. Smart project grouping and recommendations
-    9. Date-based analysis
-    10. Category-based insights
+    Your primary role is to help users find and understand project summaries from the archive.
     
-    Your responses should be:
-    - Precise and accurate
-    - Well-structured and formatted
-    - Contextually relevant
-    - Informative but concise
-    - Easy to read and understand
+    Your capabilities include:
+    1. Finding specific projects by name, student, or category
+    2. Providing detailed project summaries
+    3. Listing projects by category
+    4. Searching by student name
+    5. Date-based project listing
+    
+    Important Rules:
+    1. ONLY provide information that is explicitly stored in the project data
+    2. For any questions about project implementation details, coding, or technical aspects, respond with:
+       "I am a project search assistant. I can only provide information from the project summaries. For detailed technical information, please refer to the project synopsis."
+    3. Focus on providing accurate project summaries and basic information
+    4. Do not make assumptions or provide information beyond what's in the project data
     """
     
     # Prepare prompt for search
@@ -1068,16 +1159,17 @@ def archive_search_chatbot():
     Project Data: {json.dumps(all_projects_data)}
     
     Instructions for response:
-    1. First, analyze the user's query to understand their intent and requirements
-    2. Search through the project data to find relevant matches
-    3. Format your response in a clear, structured way using markdown
-    4. If no projects match exactly, suggest related categories or topics
-    5. For matching projects, provide a concise overview focusing on key points
+    1. First, analyze if the query is asking for project information or something else
+    2. If it's a project search query:
+       - Find matching projects
+       - Provide their summaries and key details
+    3. If it's not a project search query:
+       - Respond with: "I am a project search assistant. I can only provide information from the project summaries. For detailed technical information, please refer to the project synopsis."
     
     Response Format:
-    If projects are found:
+    For project searches:
     ```
-    Here are the projects matching your query:
+    Here are the matching projects:
 
     **Project Title** by Student Name
     Categories: **Category1**, **Category2**
@@ -1089,25 +1181,27 @@ def archive_search_chatbot():
     * Point 3
     ```
 
-    If no projects match:
+    For out-of-context queries:
     ```
-    No projects found matching your query. Here are the available categories:
-    * **Category1**
-    * **Category2**
-    ...
+    I am a project search assistant. I can only provide information from the project summaries. For detailed technical information, please refer to the project synopsis.
     ```
 
     Guidelines:
     1. Use proper markdown formatting
-    2. Keep responses concise and focused on key points
+    2. Keep responses concise and focused on project information
     3. Use bullet points for better readability
     4. Highlight important information in bold
-    5. Limit to 3-4 key points per project
-    6. Focus on the most relevant aspects of the project
-    7. Avoid lengthy descriptions
-    8. Use clear, direct language
-    9. Maintain consistent formatting
-    10. Prioritize the most important information
+    5. Only provide information that exists in the project data
+    6. Be clear and direct in responses
+    7. Maintain consistent formatting
+    8. Prioritize accuracy over speculation
+    9. Do not make assumptions or provide information beyond what's in the project data
+    10. Do not make up information or make assumptions
+    11. Do not provide any information about the project that is not explicitly stated in the project data
+    12. Do not provide summary of the project, only provide the information that is asked in the query, only provide summary if the query is about summary of the project or to give more information about the project.
+    
+    Summary:
+    [Project summary from the data]
     """
     
     # Get chat response using Gemini's advanced features

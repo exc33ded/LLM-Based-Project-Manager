@@ -569,9 +569,8 @@
         height: 500px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         margin-bottom: 20px;
-        background: white;
-        width: 100%;
-        max-width: 600px;
+        width: 1500px;  /* Increased from default width */
+        max-width: 90vw;  /* Ensure it's responsive */
     }
     
     .chatbot-header {
@@ -595,10 +594,11 @@
         flex-direction: column;
         gap: 15px;
         background-color: #f9f9f9;
+        max-width: 100%;  /* Ensure messages don't overflow */
     }
     
     .bot-message, .user-message {
-        max-width: 80%;
+        max-width: 90%;  /* Increased from 80% to use more space */
         padding: 10px 15px;
         border-radius: 10px;
         animation: fadeIn 0.3s ease-in-out;
@@ -745,6 +745,37 @@
 
     .fa-spin {
         animation: spin 1s linear infinite;
+    }
+
+    .archive-chatbot-container {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 500px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        width: 800px;  /* Increased from default width */
+        max-width: 90vw;  /* Ensure it's responsive */
+    }
+    
+    .archive-chatbot-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        background-color: #f9f9f9;
+        max-width: 100%;  /* Ensure messages don't overflow */
+    }
+    
+    .archive-bot-message, .archive-user-message {
+        max-width: 90%;  /* Increased from 80% to use more space */
+        padding: 10px 15px;
+        border-radius: 10px;
+        animation: fadeIn 0.3s ease-in-out;
     }
 </style>
 
