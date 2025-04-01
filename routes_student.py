@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, session
 from flask_login import login_required, current_user
 from models import Project, db, Task, User, MiniAdminProject, MiniAdminProjectTask, MiniAdminProjectStudent, LongTermMemory
 from werkzeug.utils import secure_filename
@@ -32,9 +32,18 @@ os.environ["LANGSMITH_PROJECT"] = os.environ.get("LANGSMITH_PROJECT", "")
 os.environ["LANGCHAIN_API_KEY"] = os.environ.get("LANGCHAIN_API_KEY", "")
 os.environ["GOOGLE_API_KEY"] = os.environ.get("GOOGLE_API_KEY", "")
 
-chat_model = ChatGoogleGenerativeAI(model="gemini-2.0-flash-thinking-exp-01-21")
+# Initialize Gemini with advanced configuration
+chat_model = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash-thinking-exp-01-21",
+    temperature=0.7,  # Add some creativity while maintaining accuracy
+    top_p=0.8,        # Control response diversity
+    top_k=40,         # Limit token selection
+    max_output_tokens=1024,  # Allow for detailed responses
+    convert_system_message_to_human=True
+)
 
 memory_store = {}
+archive_memory_store = {}
 
 def render_markdown(content):
     return markdown.markdown(content)
@@ -130,9 +139,14 @@ def add_project():
         start_date = datetime.strptime(start_date_str, '%Y-%m-%d') 
         synopsis = request.files['synopsis']
 
+        # Validate file type
+        if not synopsis.filename.lower().endswith('.pdf'):
+            flash("Only PDF files are allowed for synopsis upload.", "danger")
+            return redirect(url_for('student_routes.add_project'))
+
         # Generate a unique filename for the uploaded synopsis
         num = random.randint(1, 10000)
-        unique_synopsis_filename = f"{current_user.name}_{current_user.rollno}__{num}__{title}_synopsis.{synopsis.filename.split('.')[-1]}"
+        unique_synopsis_filename = f"{current_user.name}_{current_user.rollno}__{num}__{title}_synopsis.pdf"
         synopsis_filename = secure_filename(unique_synopsis_filename)
         synopsis_path = os.path.join(UPLOAD_FOLDER, synopsis_filename)
         synopsis.save(synopsis_path)
@@ -141,12 +155,16 @@ def add_project():
         ai_result = analyze_synopsis(synopsis_path)
 
         # Handle errors during AI analysis
-        if "error" in ai_result:
-            flash(ai_result["error"], "danger")
+        try:
+            ai_data = json.loads(ai_result)
+            if "error" in ai_data:
+                flash(ai_data["error"], "danger")
+                return redirect(url_for('student_routes.add_project'))
+        except json.JSONDecodeError:
+            flash("Error analyzing synopsis. Please try again.", "danger")
             return redirect(url_for('student_routes.add_project'))
 
         # Parse AI analysis result
-        ai_data = json.loads(ai_result)
         summary = ai_data.get("summary", "No summary provided.")
         categories = ai_data.get("categories", ["Other"])
         category = ", ".join(categories)
@@ -266,6 +284,225 @@ def delete_project(project_id):
     return redirect(url_for('student_routes.view_projects'))
 
 
+def get_archive_chatbot_html():
+    """Generate HTML for the archive chatbot UI"""
+    # CSS styles for the archive chatbot
+    chatbot_styles = """
+    <style>
+        .archive-chatbot-container {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .archive-chatbot-header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .archive-chatbot-header h4 {
+            margin: 0;
+            color: #333;
+        }
+        
+        .archive-chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: #f9f9f9;
+        }
+        
+        .archive-bot-message, .archive-user-message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 10px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .archive-bot-message {
+            align-self: flex-start;
+            background-color: #e9ecef;
+            color: #333;
+        }
+        
+        .archive-user-message {
+            align-self: flex-end;
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .archive-chatbot-input {
+            display: flex;
+            padding: 10px;
+            background-color: white;
+            border-top: 1px solid #ddd;
+        }
+        
+        .archive-chatbot-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            margin-right: 10px;
+        }
+        
+        .archive-chatbot-input button {
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Make links in chat messages stand out */
+        .archive-bot-message a {
+            color: #0056b3;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+        
+        /* Style for project cards in responses */
+        .project-search-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: white;
+        }
+        
+        .project-search-card h5 {
+            margin-top: 0;
+            color: #0056b3;
+        }
+    </style>
+    """
+    
+    chatbot_html = chatbot_styles + """
+    <div class="archive-chatbot-container">
+        <div class="archive-chatbot-header">
+            <h4>Project Search Assistant</h4>
+            <p class="text-muted">Ask me to find projects by name, category, student, or content</p>
+        </div>
+        <div class="archive-chatbot-messages" id="archiveChatMessages">
+            <div class="archive-bot-message">
+                <div class="message-content">
+                    Hello! I can help you search through the project archive. Try asking me something like:
+                    <ul>
+                        <li>Find projects about machine learning</li>
+                        <li>Show me projects by student John</li>
+                        <li>Which projects use Python?</li>
+                        <li>Find projects with web development tasks</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="archive-chatbot-input">
+            <input type="text" id="archiveChatInput" class="form-control" placeholder="Search for projects...">
+            <button id="archiveChatSendBtn" class="btn btn-primary">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputField = document.getElementById('archiveChatInput');
+            const sendButton = document.getElementById('archiveChatSendBtn');
+            const messagesContainer = document.getElementById('archiveChatMessages');
+            
+            // Function to add a message to the chat
+            function addMessage(content, isUser) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = isUser ? 'archive-user-message' : 'archive-bot-message';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.innerHTML = content;
+                
+                messageDiv.appendChild(contentDiv);
+                messagesContainer.appendChild(messageDiv);
+                
+                // Scroll to bottom
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+            
+            // Function to send query to the server
+            async function sendQuery(query) {
+                try {
+                    const response = await fetch('/student/archive/search', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ query: query }),
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    
+                    const data = await response.json();
+                    return data.response;
+                } catch (error) {
+                    console.error('Error:', error);
+                    return 'Sorry, I encountered an error while searching.';
+                }
+            }
+            
+            // Handle send button click
+            sendButton.addEventListener('click', async function() {
+                const query = inputField.value.trim();
+                if (query) {
+                    // Add user message
+                    addMessage(query, true);
+                    
+                    // Clear input
+                    inputField.value = '';
+                    
+                    // Show loading indicator
+                    const loadingDiv = document.createElement('div');
+                    loadingDiv.className = 'archive-bot-message';
+                    loadingDiv.innerHTML = '<div class="message-content"><i>Searching projects...</i></div>';
+                    messagesContainer.appendChild(loadingDiv);
+                    
+                    // Get response from server
+                    const botResponse = await sendQuery(query);
+                    
+                    // Remove loading indicator
+                    messagesContainer.removeChild(loadingDiv);
+                    
+                    // Add bot response
+                    addMessage(botResponse, false);
+                }
+            });
+            
+            // Handle enter key press
+            inputField.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendButton.click();
+                }
+            });
+        });
+    </script>
+    """
+    return chatbot_html
+
 @student_routes.route('/student/projects/archive')
 @login_required
 @student_required
@@ -275,7 +512,71 @@ def project_archive():
         return redirect(url_for('student_routes.view_projects'))
 
     projects = Project.query.all()
-    return render_template('student/project_archive.html', projects=projects)
+    
+    # Get all projects data
+    all_projects_data = []
+    
+    # Collect unique categories
+    unique_categories = set()
+    
+    for project in projects:
+        student = User.query.get(project.student_id)
+        if student:
+            # Add categories to unique set
+            if project.category:
+                categories = [cat.strip() for cat in project.category.split(',')]
+                unique_categories.update(categories)
+            
+            # Only include public project information
+            project_data = {
+                "student_name": student.name,
+                "roll_no": student.rollno,
+                "project_name": project.title,
+                "category": project.category,
+                "summary": project.summary,
+                "start_date": project.start_date.strftime('%Y-%m-%d'),
+                "project_id": project.id
+            }
+            all_projects_data.append(project_data)
+    
+    # Convert the data to JSON string for use with the chatbot
+    projects_json = json.dumps(all_projects_data)
+    
+    # Get the archive chatbot HTML
+    archive_chatbot_html = get_archive_chatbot_html()
+    
+    return render_template('student/project_archive.html', 
+                          projects=projects, 
+                          projects_json=projects_json,
+                          archive_chatbot_html=archive_chatbot_html)
+
+@student_routes.route('/student/projects/view/<int:project_id>')
+@login_required
+@student_required
+def view_archive_project(project_id):
+    """View details of a specific project from the archive"""
+    if not current_user.is_verified:
+        flash_unique("Only verified students can view archived projects.", "info", persistent=False)
+        return redirect(url_for('student_routes.view_projects'))
+    
+    project = Project.query.get_or_404(project_id)
+    student = User.query.get(project.student_id)
+    tasks = Task.query.filter_by(project_id=project_id).all()
+    
+    # Get task counts by status
+    backlog_count = sum(1 for task in tasks if task.status == 'Backlog')
+    in_progress_count = sum(1 for task in tasks if task.status == 'In Progress')
+    progressed_count = sum(1 for task in tasks if task.status == 'Progressed')
+    finished_count = sum(1 for task in tasks if task.status == 'Finished')
+    
+    return render_template('student/view_archive_project.html', 
+                          project=project, 
+                          student=student,
+                          tasks=tasks,
+                          backlog_count=backlog_count,
+                          in_progress_count=in_progress_count,
+                          progressed_count=progressed_count,
+                          finished_count=finished_count)
 
 # -------------------------------  Chatbot functions  ------------------------------------------
 
@@ -625,3 +926,201 @@ def student_profile():
         return redirect(url_for('student_routes.student_profile'))
 
     return render_template('student/profile.html', user=current_user)
+
+@student_routes.route('/api/projects/data', methods=['GET'])
+@login_required
+@student_required
+def get_projects_data():
+    """API endpoint that returns all projects data as JSON for the chatbot to use"""
+    if not current_user.is_verified:
+        return jsonify({"error": "Only verified students can access project data"}), 403
+    
+    projects = Project.query.all()
+    
+    all_projects_data = []
+    for project in projects:
+        student = User.query.get(project.student_id)
+        
+        if student:
+            # Get all tasks for this project
+            tasks = Task.query.filter_by(project_id=project.id).all()
+            task_data = []
+            
+            for task in tasks:
+                task_info = {
+                    "title": task.title,
+                    "description": task.description,
+                    "status": task.status,
+                    "due_date": task.due_date.strftime('%Y-%m-%d')
+                }
+                task_data.append(task_info)
+            
+            # Comprehensive project data including tasks
+            project_data = {
+                "student_name": student.name,
+                "roll_no": student.rollno,
+                "project_name": project.title,
+                "category": project.category,
+                "summary": project.summary,
+                "start_date": project.start_date.strftime('%Y-%m-%d'),
+                "project_id": project.id,
+                "tasks": task_data
+            }
+            all_projects_data.append(project_data)
+    
+    return jsonify(all_projects_data)
+
+def get_archive_memory():
+    """Get or create memory for archive chatbot"""
+    if 'archive' not in archive_memory_store:
+        archive_memory_store['archive'] = {'messages': []}
+    return archive_memory_store['archive']
+
+def add_message_to_archive_buffer(memory, sender, content):
+    """Add message to archive memory buffer"""
+    memory['messages'].append({'sender': sender, 'content': content})
+    if len(memory['messages']) > BUFFER_SIZE:
+        memory['messages'].pop(0)
+
+@student_routes.route('/student/archive/search', methods=['POST'])
+@login_required
+@student_required
+def archive_search_chatbot():
+    """Handles search queries from the archive chatbot"""
+    if not current_user.is_verified:
+        return jsonify({"error": "Only verified students can use this feature"}), 403
+    
+    user_query = request.json.get('query', '')
+    
+    if not user_query.strip():
+        return jsonify({"response": "Please enter a search query."})
+    
+    # Get memory for this conversation
+    memory = get_archive_memory()
+    
+    # Add user message to memory
+    add_message_to_archive_buffer(memory, 'User', user_query)
+    
+    # Get conversation history
+    conversation_history = "\n".join(
+        [f"{msg['sender']}: {msg['content']}" for msg in memory['messages'][-5:]]
+    )
+    
+    # Get all projects data
+    projects = Project.query.all()
+    all_projects_data = []
+    
+    # Collect unique categories
+    unique_categories = set()
+    
+    for project in projects:
+        student = User.query.get(project.student_id)
+        if student:
+            # Add categories to unique set
+            if project.category:
+                categories = [cat.strip() for cat in project.category.split(',')]
+                unique_categories.update(categories)
+            
+            # Only include public project information
+            project_data = {
+                "student_name": student.name,
+                "roll_no": student.rollno,
+                "project_name": project.title,
+                "category": project.category,
+                "summary": project.summary,
+                "start_date": project.start_date.strftime('%Y-%m-%d'),
+                "project_id": project.id
+            }
+            all_projects_data.append(project_data)
+    
+    # Prepare system message for better context
+    system_message = """You are an advanced AI project search assistant powered by Google's Gemini model.
+    Your capabilities include:
+    1. Natural language understanding and processing
+    2. Semantic search and matching
+    3. Context-aware responses
+    4. Intelligent project categorization
+    5. Detailed project analysis
+    6. Conversational memory and context retention
+    7. Adaptive response formatting
+    8. Smart project grouping and recommendations
+    9. Date-based analysis
+    10. Category-based insights
+    
+    Your responses should be:
+    - Precise and accurate
+    - Well-structured and formatted
+    - Contextually relevant
+    - Informative but concise
+    - Easy to read and understand
+    """
+    
+    # Prepare prompt for search
+    prompt = f"""
+    {system_message}
+    
+    Previous conversation:
+    {conversation_history}
+    
+    The user query is: "{user_query}"
+    
+    Available Categories: {', '.join(sorted(unique_categories))}
+    Project Data: {json.dumps(all_projects_data)}
+    
+    Instructions for response:
+    1. First, analyze the user's query to understand their intent and requirements
+    2. Search through the project data to find relevant matches
+    3. Format your response in a clear, structured way using markdown
+    4. If no projects match exactly, suggest related categories or topics
+    5. For matching projects, provide a concise overview focusing on key points
+    
+    Response Format:
+    If projects are found:
+    ```
+    Here are the projects matching your query:
+
+    **Project Title** by Student Name
+    Categories: **Category1**, **Category2**
+    Start Date: YYYY-MM-DD
+
+    Key Points:
+    * Point 1
+    * Point 2
+    * Point 3
+    ```
+
+    If no projects match:
+    ```
+    No projects found matching your query. Here are the available categories:
+    * **Category1**
+    * **Category2**
+    ...
+    ```
+
+    Guidelines:
+    1. Use proper markdown formatting
+    2. Keep responses concise and focused on key points
+    3. Use bullet points for better readability
+    4. Highlight important information in bold
+    5. Limit to 3-4 key points per project
+    6. Focus on the most relevant aspects of the project
+    7. Avoid lengthy descriptions
+    8. Use clear, direct language
+    9. Maintain consistent formatting
+    10. Prioritize the most important information
+    """
+    
+    # Get chat response using Gemini's advanced features
+    messages = [
+        HumanMessage(content=prompt)
+    ]
+    
+    response = chat_model.invoke(messages).content
+    
+    # Render markdown in the response
+    rendered_response = render_markdown(response)
+    
+    # Add bot response to memory
+    add_message_to_archive_buffer(memory, 'AI', rendered_response)
+    
+    return jsonify({"response": rendered_response})

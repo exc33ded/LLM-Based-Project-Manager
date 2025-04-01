@@ -170,27 +170,43 @@
     <br>
     <hr>
     <!-- Floating chat button -->
-<button id="chat-toggle-btn" class="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-full shadow-lg">Chat</button>
+    <button id="chat-toggle-btn" class="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors duration-300">
+        Chat
+    </button>
 
-<!-- Chat overlay -->
-<div id="chat-overlay" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
-    <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl">
-        <div class="chat-container">
-            <h2>Project: {{ project.title }}</h2>
-            <!-- <p><strong>Project Summary:</strong> {{ project.summary }}</p> -->
-            <h3>Chat History</h3>
-            <div id="chat-history" class="chat-history">
-                {% for msg in chat_history %}
-                    <div class="message {{ msg.sender.lower() }}">
-                        <strong>{{ msg.sender.capitalize() }}</strong>
-                        <div class="markdown-content">{{ msg.content|safe }}</div>
-                    </div>
-                {% endfor %}
+    <!-- Chat overlay -->
+    <div id="chat-overlay" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
+        <div class="chatbot-container">
+            <div class="chatbot-header">
+                <div class="header-content">
+                    <h4>Project Assistant</h4>
+                    <p class="text-muted">Ask me anything about your project tasks</p>
+                </div>
+                <button id="load-history-btn" class="load-history-btn">
+                    <i class="fas fa-history"></i> Load History
+                </button>
             </div>
-            <form id="chat-form">
-                <textarea id="message" name="message" rows="3" placeholder="Type your message..."></textarea>
-                <button type="submit">Send</button>
-            </form>
+            <div class="chatbot-messages" id="chat-history">
+                <div class="bot-message">
+                    <div class="message-content">
+                        Hello! I'm here to help you with your project tasks. Click the "Load History" button to see our previous conversations.
+                    </div>
+                </div>
+            </div>
+            <div id="loading-indicator" class="loading-indicator hidden">
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <p>AI is thinking...</p>
+            </div>
+            <div class="chatbot-input">
+                <input type="text" id="message" class="form-control" placeholder="Type your message...">
+                <button id="send-message-btn" class="send-message-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -212,122 +228,196 @@
         showCategory('backlog');
     </script>
 
-<script>
-    const projectId = {{ project.id }};
-    const chatToggleBtn = document.getElementById('chat-toggle-btn');
-    const chatOverlay = document.getElementById('chat-overlay');
-    const chatForm = document.getElementById('chat-form');
-    const chatHistory = document.getElementById('chat-history');
-    const messageInput = document.getElementById('message');
-    const scrollToBottomBtn = document.getElementById('scroll-to-bottom-btn');
+    <script>
+        const projectId = {{ project.id }};
+        const chatToggleBtn = document.getElementById('chat-toggle-btn');
+        const chatOverlay = document.getElementById('chat-overlay');
+        const messageInput = document.getElementById('message');
+        const sendMessageBtn = document.getElementById('send-message-btn');
+        const chatHistory = document.getElementById('chat-history');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const loadHistoryBtn = document.getElementById('load-history-btn');
 
-    // Toggle chat overlay and load history
-    chatToggleBtn.addEventListener('click', async () => {
-        if (chatOverlay.classList.contains('hidden')) {
-            chatOverlay.classList.remove('hidden');
-            chatToggleBtn.textContent = 'Stop';
-            await loadChatHistory(); // Load history immediately
-            scrollToBottom(); // Scroll to bottom on open
-        } else {
-            await saveChat();
-            chatOverlay.classList.add('hidden');
-            chatToggleBtn.textContent = 'Chat';
-        }
-    });
-
-    // Handle message submission
-    chatForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const message = messageInput.value.trim();
-        if (!message) return;
-
-        try {
-            const response = await fetch(`/project/${projectId}/tasks`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ message })
-            });
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Message response data:', data);
-                updateChatHistory(data.chat_history); // Update with new messages
-                messageInput.value = '';
-                scrollToBottom(); // Scroll to bottom after sending
+        // Toggle chat overlay
+        chatToggleBtn.addEventListener('click', async () => {
+            if (chatOverlay.classList.contains('hidden')) {
+                chatOverlay.classList.remove('hidden');
+                chatToggleBtn.textContent = 'Stop';
+                scrollToBottom();
             } else {
-                console.error('Failed to send message:', response.statusText);
+                await saveChat();
+                chatOverlay.classList.add('hidden');
+                chatToggleBtn.textContent = 'Chat';
             }
-        } catch (error) {
-            console.error('Error sending message:', error);
-        }
-    });
-
-    // Load chat history from the database
-    async function loadChatHistory() {
-        try {
-            const url = `/student/get_chat_history/${projectId}`;
-            console.log('Fetching chat history from:', url);
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: { 'Accept': 'application/json' }
-            });
-            console.log('Response status:', response.status);
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Loaded chat history:', data.chat_history);
-                updateChatHistory(data.chat_history || []); // Update UI with fetched history
-            } else {
-                console.error('Failed to load chat history:', response.status, response.statusText);
-                updateChatHistory([]); // Fallback to empty history
-            }
-        } catch (error) {
-            console.error('Error fetching chat history:', error);
-            updateChatHistory([]); // Fallback to empty history
-        }
-    }
-
-    // Save chat history to the database
-    async function saveChat() {
-        try {
-            const response = await fetch(`/student/save_chat/${projectId}`, {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            if (response.ok) {
-                console.log('Chat saved successfully');
-            } else {
-                console.error('Failed to save chat:', response.statusText);
-            }
-        } catch (error) {
-            console.error('Error saving chat:', error);
-        }
-    }
-
-    // Update chat history in the UI
-    function updateChatHistory(history) {
-        console.log('Updating UI with history:', history);
-        chatHistory.innerHTML = ''; // Clear existing content
-        if (!history || history.length === 0) {
-            chatHistory.innerHTML = '<p>No chat history available.</p>';
-            return;
-        }
-        history.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = `message ${msg.sender.toLowerCase()}`;
-            div.innerHTML = `<strong>${msg.sender.charAt(0).toUpperCase() + msg.sender.slice(1)}</strong><div class="markdown-content">${msg.content}</div>`;
-            chatHistory.appendChild(div);
         });
-    }
 
-    // Scroll to the bottom of the chat history
-    function scrollToBottom() {
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-    }
+        // Load history button click handler
+        loadHistoryBtn.addEventListener('click', async () => {
+            loadHistoryBtn.disabled = true;
+            loadHistoryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+            await loadChatHistory();
+            loadHistoryBtn.disabled = false;
+            loadHistoryBtn.innerHTML = '<i class="fas fa-history"></i> Load History';
+        });
 
-    // Scroll to bottom button event listener
-    scrollToBottomBtn.addEventListener('click', () => {
-        scrollToBottom();
-    });
-</script>
+        // Handle message submission
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            try {
+                // Show loading indicator
+                loadingIndicator.classList.remove('hidden');
+                messageInput.disabled = true;
+                sendMessageBtn.disabled = true;
+
+                // Add user message immediately
+                const userMessageDiv = document.createElement('div');
+                userMessageDiv.className = 'user-message';
+                userMessageDiv.innerHTML = `
+                    <div class="message-content">${message}</div>
+                `;
+                chatHistory.appendChild(userMessageDiv);
+                scrollToBottom();
+
+                const response = await fetch(`/project/${projectId}/tasks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ message })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Message response data:', data);
+                    if (data.chat_history) {
+                        updateChatHistory(data.chat_history);
+                    }
+                    messageInput.value = '';
+                    scrollToBottom();
+                } else {
+                    console.error('Failed to send message:', response.statusText);
+                    const errorMessageDiv = document.createElement('div');
+                    errorMessageDiv.className = 'bot-message';
+                    errorMessageDiv.innerHTML = `
+                        <div class="message-content">Sorry, I encountered an error. Please try again.</div>
+                    `;
+                    chatHistory.appendChild(errorMessageDiv);
+                    scrollToBottom();
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                const errorMessageDiv = document.createElement('div');
+                errorMessageDiv.className = 'bot-message';
+                errorMessageDiv.innerHTML = `
+                    <div class="message-content">Sorry, I encountered an error. Please try again.</div>
+                `;
+                chatHistory.appendChild(errorMessageDiv);
+                scrollToBottom();
+            } finally {
+                // Hide loading indicator and re-enable input
+                loadingIndicator.classList.add('hidden');
+                messageInput.disabled = false;
+                sendMessageBtn.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        // Send message on button click
+        sendMessageBtn.addEventListener('click', sendMessage);
+
+        // Send message on enter key
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Update chat history in the UI
+        function updateChatHistory(history) {
+            console.log('Updating UI with history:', history);
+            chatHistory.innerHTML = ''; // Clear existing content
+            
+            if (!history || history.length === 0) {
+                chatHistory.innerHTML = `
+                    <div class="bot-message">
+                        <div class="message-content">Hello! I'm here to help you with your project tasks. How can I assist you today?</div>
+                    </div>`;
+                return;
+            }
+
+            history.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = msg.sender.toLowerCase() === 'user' ? 'user-message' : 'bot-message';
+                div.innerHTML = `
+                    <div class="message-content">${msg.content}</div>
+                `;
+                chatHistory.appendChild(div);
+            });
+        }
+
+        // Scroll to the bottom of the chat history
+        function scrollToBottom() {
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        // Save chat history to the database
+        async function saveChat() {
+            try {
+                const response = await fetch(`/student/save_chat/${projectId}`, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (response.ok) {
+                    console.log('Chat saved successfully');
+                } else {
+                    console.error('Failed to save chat:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error saving chat:', error);
+            }
+        }
+
+        // Load chat history from the database
+        async function loadChatHistory() {
+            try {
+                const url = `/project/${projectId}/tasks`;
+                console.log('Fetching chat history from:', url);
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json'
+                    },
+                    body: new URLSearchParams({ message: '' }) // Send empty message to load history
+                });
+                console.log('Response status:', response.status);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Loaded chat history:', data.chat_history);
+                    if (data.chat_history && data.chat_history.length > 0) {
+                        updateChatHistory(data.chat_history);
+                    } else {
+                        chatHistory.innerHTML = `
+                            <div class="bot-message">
+                                <div class="message-content">Hello! I'm here to help you with your project tasks. How can I assist you today?</div>
+                            </div>`;
+                    }
+                } else {
+                    console.error('Failed to load chat history:', response.status, response.statusText);
+                    chatHistory.innerHTML = `
+                        <div class="bot-message">
+                            <div class="message-content">Hello! I'm here to help you with your project tasks. How can I assist you today?</div>
+                        </div>`;
+                }
+            } catch (error) {
+                console.error('Error fetching chat history:', error);
+                chatHistory.innerHTML = `
+                    <div class="bot-message">
+                        <div class="message-content">Hello! I'm here to help you with your project tasks. How can I assist you today?</div>
+                    </div>`;
+            }
+        }
+    </script>
 
 </div>
 
@@ -367,23 +457,96 @@
         /* Space between the buttons and the form */
     }
 
-
     #chat-toggle-btn {
         position: fixed;
         bottom: 20px;
         right: 20px;
-        background: #4CAF50;
+        background: #007bff;
         color: white;
         border: none;
         border-radius: 50%;
         width: 60px;
         height: 60px;
-        font-size: 18px;
+        font-size: 16px;
         cursor: pointer;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         z-index: 1001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        padding: 0 15px;
     }
-    #chat-toggle-btn:hover { background: #45a049; }
+
+    #chat-toggle-btn:hover {
+        background: #0056b3;
+        transform: scale(1.05);
+    }
+
+    #chat-toggle-btn i {
+        transition: transform 0.3s ease;
+    }
+
+    #chat-toggle-btn:hover i {
+        transform: scale(1.1);
+    }
+
+    .send-message-btn {
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        background: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .send-message-btn:hover {
+        background: #0056b3;
+        transform: scale(1.05);
+    }
+
+    .send-message-btn:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .send-message-btn i {
+        font-size: 18px;
+        transition: transform 0.3s ease;
+    }
+
+    .send-message-btn:hover i {
+        transform: translateX(2px);
+    }
+
+    .chatbot-input input {
+        flex: 1;
+        padding: 12px 20px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        margin-right: 10px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .chatbot-input input:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+    }
+
+    .chatbot-input input:disabled {
+        background-color: #f5f5f5;
+        cursor: not-allowed;
+    }
+
     #chat-overlay {
         position: fixed;
         top: 0;
@@ -397,79 +560,192 @@
         z-index: 1000;
     }
     #chat-overlay.hidden { display: none; }
-    .chat-overlay-container {
-        max-height: 90vh; /* Limit height to 90% of viewport */
-        overflow-y: auto; /* Allow scrolling if content overflows */
-    }
-    .chat-container {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        width: 100%;
+    .chatbot-container {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
+        height: 500px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        background: white;
+        width: 100%;
+        max-width: 600px;
     }
-    .chat-history {
-        max-height: 50vh; /* Limit history height */
+    
+    .chatbot-header {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .header-content {
+        flex: 1;
+    }
+    
+    .chatbot-messages {
+        flex: 1;
         overflow-y: auto;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        background-color: #f9f9f9;
+    }
+    
+    .bot-message, .user-message {
+        max-width: 80%;
+        padding: 10px 15px;
+        border-radius: 10px;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    .bot-message {
+        align-self: flex-start;
+        background-color: #e9ecef;
+        color: #333;
+    }
+    
+    .user-message {
+        align-self: flex-end;
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .chatbot-input {
+        display: flex;
+        padding: 10px;
+        background-color: white;
+        border-top: 1px solid #ddd;
+    }
+    
+    .chatbot-input input {
+        flex: 1;
         padding: 10px;
         border: 1px solid #ddd;
-        border-radius: 5px;
-        background: #f9f9f9;
-        flex-grow: 1; /* Allow it to grow within container */
+        border-radius: 20px;
+        margin-right: 10px;
     }
-    .message {
-        padding: 10px;
-        border-radius: 8px;
-        margin: 10px 0;
-        max-width: 70%;
+    
+    .chatbot-input button {
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        background: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+
+    .chatbot-input button:hover {
+        background: #0056b3;
+    }
+
+    .chatbot-input button:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message-content {
         word-wrap: break-word;
     }
-    .message.user {
-        background: #d1e7fd;
-        margin-left: auto;
-        text-align: right;
-    }
-    .message.ai { background: #f1e0ff; }
-    .message strong {
-        display: block;
-        font-size: 0.8em;
-        color: #555;
-        margin-bottom: 5px;
-    }
-    .markdown-content { word-wrap: break-word; }
-    .scroll-btn {
-        margin-top: 10px;
-        padding: 5px 10px;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        align-self: center;
-    }
-    .scroll-btn:hover { background: #45a049; }
-    textarea {
-        width: 100%;
+
+    .loading-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
         padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        resize: vertical;
-        margin-top: 10px;
-        font-size: 14px;
+        margin: 10px 0;
     }
-    button {
-        margin-top: 10px;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        background: #4CAF50;
+
+    .loading-indicator.hidden {
+        display: none;
+    }
+
+    .typing-indicator {
+        display: flex;
+        gap: 4px;
+        padding: 8px 12px;
+        background: #f0f0f0;
+        border-radius: 20px;
+        margin-bottom: 8px;
+    }
+
+    .typing-indicator span {
+        width: 8px;
+        height: 8px;
+        background: #007bff;
+        border-radius: 50%;
+        animation: bounce 1.4s infinite ease-in-out;
+    }
+
+    .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+    }
+
+    .loading-indicator p {
+        color: #666;
+        font-size: 14px;
+        margin: 0;
+    }
+
+    input:disabled {
+        background-color: #f5f5f5;
+        cursor: not-allowed;
+    }
+
+    .load-history-btn {
+        background: #007bff;
         color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 14px;
+        transition: background-color 0.3s;
+    }
+
+    .load-history-btn:hover {
+        background: #0056b3;
+    }
+
+    .load-history-btn:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+    }
+
+    .load-history-btn i {
         font-size: 14px;
     }
-    button:hover { background: #45a049; }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .fa-spin {
+        animation: spin 1s linear infinite;
+    }
 </style>
 
 {% endblock %}

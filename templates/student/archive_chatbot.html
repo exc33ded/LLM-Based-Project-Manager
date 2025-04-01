@@ -1,0 +1,221 @@
+{% macro render_chatbot() %}
+<style>
+    .archive-chatbot-container {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 500px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .archive-chatbot-header {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .archive-chatbot-header h4 {
+        margin: 0;
+        color: #333;
+    }
+    
+    .archive-chatbot-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        background-color: #f9f9f9;
+    }
+    
+    .archive-bot-message, .archive-user-message {
+        max-width: 80%;
+        padding: 10px 15px;
+        border-radius: 10px;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    .archive-bot-message {
+        align-self: flex-start;
+        background-color: #e9ecef;
+        color: #333;
+    }
+    
+    .archive-user-message {
+        align-self: flex-end;
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .archive-chatbot-input {
+        display: flex;
+        padding: 10px;
+        background-color: white;
+        border-top: 1px solid #ddd;
+    }
+    
+    .archive-chatbot-input input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        margin-right: 10px;
+    }
+    
+    .archive-chatbot-input button {
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Markdown styling */
+    .archive-bot-message .message-content {
+        line-height: 1.5;
+    }
+    
+    .archive-bot-message .message-content strong {
+        color: #0056b3;
+        font-weight: 600;
+    }
+    
+    .archive-bot-message .message-content ul {
+        list-style-type: disc;
+        margin-left: 20px;
+        margin-top: 5px;
+    }
+    
+    .archive-bot-message .message-content li {
+        margin-bottom: 3px;
+    }
+</style>
+
+<div class="archive-chatbot-container">
+    <div class="archive-chatbot-header">
+        <h4>Project Search Assistant</h4>
+        <p class="text-muted">Ask me to find projects by name, category, student, or content</p>
+    </div>
+    <div class="archive-chatbot-messages" id="archiveChatMessages">
+        <div class="archive-bot-message">
+            <div class="message-content">
+                Hello! I can help you search through the project archive. Try asking me something like:
+                <ul>
+                    <li>Find projects about machine learning</li>
+                    <li>Show me projects by student John</li>
+                    <li>Find projects with web development tasks</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="archive-chatbot-input">
+        <input type="text" id="archiveChatInput" class="form-control" placeholder="Search for projects...">
+        <button id="archiveChatSendBtn" class="btn btn-primary">
+            <i class="fas fa-search"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputField = document.getElementById('archiveChatInput');
+        const sendButton = document.getElementById('archiveChatSendBtn');
+        const messagesContainer = document.getElementById('archiveChatMessages');
+        
+        // Function to scroll to bottom
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Function to add a message to the chat
+        function addMessage(content, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isUser ? 'archive-user-message' : 'archive-bot-message';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = content;
+            
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+            
+            // Scroll to bottom after adding message
+            scrollToBottom();
+        }
+        
+        // Function to send query to the server
+        async function sendQuery(query) {
+            try {
+                const response = await fetch('/student/archive/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query }),
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                const data = await response.json();
+                return data.response;
+            } catch (error) {
+                console.error('Error:', error);
+                return 'Sorry, I encountered an error while searching.';
+            }
+        }
+        
+        // Handle send button click
+        sendButton.addEventListener('click', async function() {
+            const query = inputField.value.trim();
+            if (query) {
+                // Add user message
+                addMessage(query, true);
+                
+                // Clear input
+                inputField.value = '';
+                
+                // Show loading indicator
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'archive-bot-message';
+                loadingDiv.innerHTML = '<div class="message-content"><i>Searching projects...</i></div>';
+                messagesContainer.appendChild(loadingDiv);
+                
+                // Get response from server
+                const botResponse = await sendQuery(query);
+                
+                // Remove loading indicator
+                messagesContainer.removeChild(loadingDiv);
+                
+                // Add bot response
+                addMessage(botResponse, false);
+                
+                // Scroll to bottom after response
+                scrollToBottom();
+            }
+        });
+        
+        // Handle enter key press
+        inputField.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendButton.click();
+            }
+        });
+        
+        // Initial scroll to bottom
+        scrollToBottom();
+    });
+</script>
+{% endmacro %} 

@@ -1,17 +1,18 @@
 {% extends "student/base_students.html" %}
+{% from "student/archive_chatbot.html" import render_chatbot %}
 
 {% block content %}
-<div class="ml-4 mr-4">
-    <h1 class="text-4xl font-extrabold dark:text-black">Project Archive</h1>
-    <div class="w-full p-4 text-center bg-white border border-gray-200 rounded-lg shadow sm:p-8">
-
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Project Archive</h1>
+    
+    <div class="overflow-x-auto">
         <table id="example" class="display" style="width:100%">
             <thead>
                 <tr>
                     <th>Student Name</th>
                     <th>Course</th>
                     <th>Project Name</th>
-                    <th>Roll No</th>
+                    <th>Roll Number</th>
                     <th>Category</th>
                     <th>Synopsis</th>
                 </tr>
@@ -19,34 +20,72 @@
             <tbody>
                 {% for project in projects %}
                 <tr>
-                    <!-- Access the owner (creator) of the project -->
                     <td>{{ project.owner.name }}</td>
                     <td>{{ project.owner.course }}</td>
                     <td>{{ project.title }}</td>
                     <td>{{ project.owner.rollno }}</td>
                     <td>
-                        {% set categories = project.category.split(', ') %}
-                        {% set colors = ['#FFCDD2', '#F8BBD0', '#E1BEE7', '#D1C4E9', '#C5CAE9', '#BBDEFB', '#B3E5FC', '#B2EBF2', '#B2DFDB', '#C8E6C9', '#DCEDC8', '#F0F4C3'] %}
-                        <div class="flex flex-wrap gap-2">
-                            {% for category in categories %}
-                                <span class="category-tag px-3 py-1 rounded-full" style="background-color: {{ colors[loop.index0 % colors|length] }};">
-                                    {{ category }}
-                                </span>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                            {% for category in project.category.split(',') %}
+                            <span style="padding: 2px 8px; border-radius: 12px; font-size: 0.875rem; background-color: #e9ecef;">{{ category.strip() }}</span>
                             {% endfor %}
                         </div>
                     </td>
-                    <td><a href="{{ url_for('static', filename='uploads/synopsis/' + project.synopsis_filename) }}"
+                    <td>
+                        <a href="{{ url_for('static', filename='uploads/synopsis/' + project.synopsis_filename) }}"
                             target="_blank"
                             class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">View
-                            Synopsis</a></td>
+                            Synopsis</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    
+    <!-- Floating Chatbot Panel -->
+    <div id="chatbotPanel" class="fixed top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-40" style="width: 350px; max-height: 80vh; display: none; overflow: hidden;">
+        <div class="flex items-center justify-between bg-blue-600 text-white p-3">
+            <h3 class="text-lg font-bold">Project Search Assistant</h3>
+            <button id="closeChatbot" class="text-white hover:text-gray-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="chatbot-container" style="height: calc(80vh - 50px); overflow-y: auto;">
+            {{ render_chatbot() }}
+        </div>
+    </div>
+    
+    <!-- Chat Button -->
+    <button id="chatbotToggleBtn" class="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full p-4 shadow-lg flex items-center justify-center z-50">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+        <span class="ml-2">Search Projects</span>
+    </button>
+    
     <script>
         $(document).ready(function () {
             $('#example').DataTable();
+            
+            // Toggle chatbot visibility
+            const chatbotBtn = document.getElementById('chatbotToggleBtn');
+            const chatbotPanel = document.getElementById('chatbotPanel');
+            const closeBtn = document.getElementById('closeChatbot');
+            
+            chatbotBtn.addEventListener('click', function() {
+                if (chatbotPanel.style.display === 'none') {
+                    chatbotPanel.style.display = 'block';
+                } else {
+                    chatbotPanel.style.display = 'none';
+                }
+            });
+            
+            closeBtn.addEventListener('click', function() {
+                chatbotPanel.style.display = 'none';
+            });
         });
     </script>
 </div>
