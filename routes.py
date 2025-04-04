@@ -135,7 +135,12 @@ def verify_otp():
 def reset_password():
     if request.method == 'POST':
         new_password = request.form['password']
+        confirm_password = request.form['confirm_password']
         email = session.get('reset_email')
+
+        if new_password != confirm_password:
+            flash("Passwords do not match. Please try again.", "danger")
+            return redirect(url_for('auth_routes.reset_password'))
 
         user = User.query.filter_by(email=email).first()
         if user:
@@ -147,6 +152,7 @@ def reset_password():
             return redirect(url_for('auth_routes.login'))
 
     return render_template('reset_password.html')
+
 
 @auth_routes.route('/logout')
 @login_required
