@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, session
 from flask_login import login_user, logout_user, login_required, current_user
 from models import User, Project
-from extensions import db
+from extensions import db, mail
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+from flask_mail import Message
+from datetime import timedelta, datetime
+import random
 
 auth_routes = Blueprint('auth_routes', __name__)
 
@@ -86,6 +89,64 @@ def login():
     
     return render_template('login.html')
 
+@auth_routes.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        user = User.query.filter_by(email=email).first()
+
+        if user:
+            otp = random.randint(100000, 999999)
+            session['reset_email'] = email
+            session['otp'] = str(otp)
+            session['otp_attempts'] = 0
+
+            msg = Message('Your OTP for Password Reset', sender='your_email@gmail.com', recipients=[email])
+            msg.body = f'Your OTP is: {otp}'
+            mail.send(msg)
+
+            flash('OTP sent to your email. Please verify.', 'info')
+            return redirect(url_for('auth_routes.verify_otp'))
+
+        flash('Email not found.', 'danger')
+
+    return render_template('forgot_password.html')
+
+@auth_routes.route('/verify-otp', methods=['GET', 'POST'])
+def verify_otp():
+    if request.method == 'POST':
+        entered_otp = request.form['otp']
+        attempts = session.get('otp_attempts', 0)
+
+        if attempts >= 3:
+            flash('Maximum attempts exceeded.', 'danger')
+            return redirect(url_for('auth_routes.forgot_password'))
+
+        if entered_otp == session.get('otp'):
+            session.pop('otp_attempts', None)
+            return redirect(url_for('auth_routes.reset_password'))
+        else:
+            session['otp_attempts'] = attempts + 1
+            flash(f'Incorrect OTP. Attempts left: {2 - attempts}', 'danger')
+
+    return render_template('verify_otp.html')
+
+@auth_routes.route('/reset-password', methods=['GET', 'POST'])
+def reset_password():
+    if request.method == 'POST':
+        new_password = request.form['password']
+        email = session.get('reset_email')
+
+        user = User.query.filter_by(email=email).first()
+        if user:
+            user.password = generate_password_hash(new_password)
+            db.session.commit()
+
+            session.pop('reset_email', None)
+            flash('Password changed successfully. Please login.', 'success')
+            return redirect(url_for('auth_routes.login'))
+
+    return render_template('reset_password.html')
 
 @auth_routes.route('/logout')
 @login_required

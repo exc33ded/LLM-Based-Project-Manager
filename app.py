@@ -2,15 +2,29 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 import os
-from extensions import db, login_manager
-from models import User  # Only User is imported now
+from extensions import db, login_manager, mail
+from models import User  
 from werkzeug.security import generate_password_hash
+from dotenv import load_dotenv  
 
 app = Flask(__name__)
 
+load_dotenv()
+
+# Database configuration
 app.config['SECRET_KEY'] = os.urandom(24)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pms.sqlite'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+
+# Email configuration
+app.config.update(
+    MAIL_SERVER=os.getenv('MAIL_SERVER'),
+    MAIL_PORT=int(os.getenv('MAIL_PORT')),
+    MAIL_USE_TLS=os.getenv('MAIL_USE_TLS', 'True').lower() == 'true', 
+    MAIL_USERNAME=os.getenv('MAIL_USERNAME'),
+    MAIL_PASSWORD=os.getenv('MAIL_PASSWORD')
+)
+mail.init_app(app)
 
 db.init_app(app)
 login_manager.init_app(app)

@@ -25,8 +25,10 @@ class User(db.Model, UserMixin):
     # Relationship to MiniAdminProject
     miniadmin_projects = db.relationship('MiniAdminProject', backref='miniadmin', lazy=True)
 
-    def __repr__(self):
-        return f"User('{self.name}', '{self.email}', '{self.role}', Verified: {self.is_verified})"
+    # Forget Password Token
+    otp = db.Column(db.String(6))
+    otp_created_at = db.Column(db.DateTime)
+    otp_attempts = db.Column(db.Integer, default=0)
 
 class Project(db.Model):
     __tablename__ = 'projects'

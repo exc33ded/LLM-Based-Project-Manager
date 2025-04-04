@@ -48,6 +48,9 @@
                                 Login
                             </button>
                         </div>
+                        <p class="text-sm text-center mt-2">
+                            <a href="{{ url_for('auth_routes.forgot_password') }}" class="text-blue-600 hover:underline">Forgot Password?</a>
+                        </p>                      
                         <p class="text-gray-800 text-sm !mt-8 text-center">Don't have an account? <a
                             href="{{ url_for('auth_routes.register') }}"
                                 class="text-blue-600 hover:underline ml-1 whitespace-nowrap font-semibold">Register
