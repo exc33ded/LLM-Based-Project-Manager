@@ -28,30 +28,39 @@ def miniadmin_required(f):
 @login_required
 @miniadmin_required
 def miniadmin_dashboard():
-    # Get assigned students for the mini-admin
+    # Get all students assigned to the current MiniAdmin
     assigned_students = current_user.assigned_students
     assigned_students_count = len(assigned_students)
 
-    # Get total projects assigned to mini-admin's students
-    total_projects = sum(len(student.projects) for student in assigned_students)
+    # Get all project IDs of those students
+    project_ids = [project.id for student in assigned_students for project in student.projects]
 
-    # Get the total tasks categorized by their status
-    backlog_tasks_count = Task.query.filter_by(status='Backlog').count()
-    in_progress_tasks_count = Task.query.filter_by(status='In Progress').count()
-    progressed_tasks_count = Task.query.filter_by(status='Progressed').count()
-    finished_tasks_count = Task.query.filter_by(status='Finished').count()
+    # Get total number of projects assigned to MiniAdmin's students
+    total_projects = len(project_ids)
 
-    # If a specific project is selected, filter the tasks for that project
+    # Initialize task counts for assigned students' projects
+    backlog_tasks_count = Task.query.filter(Task.project_id.in_(project_ids), Task.status == 'Backlog').count()
+    in_progress_tasks_count = Task.query.filter(Task.project_id.in_(project_ids), Task.status == 'In Progress').count()
+    progressed_tasks_count = Task.query.filter(Task.project_id.in_(project_ids), Task.status == 'Progressed').count()
+    finished_tasks_count = Task.query.filter(Task.project_id.in_(project_ids), Task.status == 'Finished').count()
+
+    # Optional: Filter task stats for a specific project selected via query parameter
     project_id = request.args.get('project_id', None)
     if project_id:
         project = Project.query.get_or_404(project_id)
-        tasks = Task.query.filter_by(project_id=project_id).all()
 
-        # Categorize tasks by status
-        backlog_tasks_count = len([task for task in tasks if task.status == 'Backlog'])
-        in_progress_tasks_count = len([task for task in tasks if task.status == 'In Progress'])
-        progressed_tasks_count = len([task for task in tasks if task.status == 'Progressed'])
-        finished_tasks_count = len([task for task in tasks if task.status == 'Finished'])
+        # Only allow access if the project belongs to a student assigned to the current MiniAdmin
+        if project.student_id in [student.id for student in assigned_students]:
+            tasks = Task.query.filter_by(project_id=project_id).all()
+
+            # Override with task counts for the selected project only
+            backlog_tasks_count = len([task for task in tasks if task.status == 'Backlog'])
+            in_progress_tasks_count = len([task for task in tasks if task.status == 'In Progress'])
+            progressed_tasks_count = len([task for task in tasks if task.status == 'Progressed'])
+            finished_tasks_count = len([task for task in tasks if task.status == 'Finished'])
+        else:
+            flash("You are not authorized to view this project's tasks.", "danger")
+            return redirect(url_for('miniadmin_routes.miniadmin_dashboard'))
 
     return render_template(
         'miniadmin/miniadmin_dashboard.html',
@@ -61,7 +70,7 @@ def miniadmin_dashboard():
         in_progress_tasks_count=in_progress_tasks_count,
         progressed_tasks_count=progressed_tasks_count,
         finished_tasks_count=finished_tasks_count,
-        assigned_students=assigned_students  # Send the list of assigned students
+        assigned_students=assigned_students
     )
 
 # ------------------------------ Managing Mentor Project with students  ----------------------------------
@@ -433,6 +442,9 @@ def view_tasks_for_miniadmin_project(project_id):
     project = MiniAdminProject.query.get_or_404(project_id)
     
     tasks = MiniAdminProjectTask.query.filter_by(miniadmin_project_id=project.id).all()
+
+    for task in tasks:
+        check_task_status(task)
 
     # Categorize tasks by status
     backlog_tasks = [task for task in tasks if task.status == 'Backlog']

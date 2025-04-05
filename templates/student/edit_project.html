@@ -69,6 +69,15 @@
 
 </form>
 
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const startDateInput = document.getElementById("start_date");
+        const today = new Date().toISOString().split("T")[0];
+        startDateInput.setAttribute("min", today);
+    });
+</script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const categoriesContainer = document.getElementById('categories-container');

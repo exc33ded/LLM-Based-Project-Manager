@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from models import User, Project, Task, MiniAdminProject, MiniAdminProjectTask, MiniAdminProjectStudent
-from extensions import db
+from extensions import db, mail
 from flask_login import login_user, login_required, current_user, logout_user
 from werkzeug.security import check_password_hash
 from datetime import datetime
@@ -9,12 +9,25 @@ from utils.pdf_summarize import analyze_synopsis
 from utils.task_generation import generate_dynamic_coding_tasks
 from utils.no_again_flash import flash_unique
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash
 import os
 import json
+from functools import wraps
+from flask_mail import Message
 
 UPLOAD_FOLDER = 'static/uploads/synopsis'
+ID_FOLDER = 'static/uploads/id'
 
 admin_routes = Blueprint('admin_routes', __name__)
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if current_user.role != 'admin':
+            flash_unique('Unauthorized access', 'danger', persistent=False)
+            return redirect(url_for('auth_routes.login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @admin_routes.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
@@ -34,10 +47,8 @@ def admin_login():
 
 @admin_routes.route('/admin/dashboard', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def admin_dashboard():
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     # Fetch general statistics
     assigned_students_count = User.query.filter(User.miniadmin_id != None).count()
@@ -96,29 +107,24 @@ def admin_dashboard():
 
 @admin_routes.route('/admin/assignments')
 @login_required
+@admin_required
 def admin_assignment_overview():
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
     mini_admins = User.query.filter_by(role='mini-admin').all()
     
     return render_template('admin/admin_assignments.html', mini_admins=mini_admins)
 
 @admin_routes.route('/admin/verify_users')
 @login_required
+@admin_required
 def verify_users():
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
     pending_users = User.query.filter_by(is_verified=False).all()
     return render_template('admin/verify_users.html', pending_users=pending_users)
 
+
 @admin_routes.route('/admin/verify_users/<int:user_id>', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def verify_user(user_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
     user = User.query.get_or_404(user_id)
 
     if request.method == 'POST':
@@ -130,22 +136,41 @@ def verify_user(user_id):
         if verification_status == 'verify':
             user.is_verified = True
             flash_unique(f"User {user.name} has been verified.", 'success')
+
+            # Send email to user with explicit sender
+            msg = Message(
+                subject='Verification Status',
+                sender='admin@example.com',  # replace with your sender email
+                recipients=[user.email]
+            )
+            msg.body = f"""Dear {user.name},
+
+Your account has been verified by the admin. You can now log in and access your dashboard.
+
+Best regards,
+Admin Team
+"""
+            mail.send(msg)
+
+            # Delete the ID card file after verification
+            if user.id_card:
+                id_path = os.path.join(current_app.root_path, 'static', 'uploads', 'id', user.id_card)
+                if os.path.exists(id_path):
+                    os.remove(id_path)
+
         elif verification_status == 'not_verify':
             user.is_verified = False
             flash_unique(f"User {user.name} has not been verified.", 'danger')
 
-        db.session.commit() 
-
+        db.session.commit()
         return redirect(url_for('admin_routes.verify_users'))
 
     return render_template('admin/verify_user.html', user=user)
 
 @admin_routes.route('/admin/delete_user/<int:user_id>')
 @login_required
+@admin_required
 def delete_user(user_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
     user = User.query.get(user_id)
     if user:
         db.session.delete(user)
@@ -166,10 +191,8 @@ def admin_logout():
 
 @admin_routes.route('/admin/projects/create/<int:user_id>', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def add_project(user_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     user = User.query.get_or_404(user_id)
     
@@ -236,10 +259,8 @@ def add_project(user_id):
 
 @admin_routes.route('/admin/projects/edit/<int:project_id>', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def edit_project(project_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     project = Project.query.get_or_404(project_id)
 
@@ -301,10 +322,8 @@ def check_task_status(task):
 
 @admin_routes.route('/admin/projects')
 @login_required
+@admin_required
 def view_projects():
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     users = User.query.all()
     student_projects = [(user, len(user.projects)) for user in users if user.role == 'student']
@@ -313,10 +332,8 @@ def view_projects():
 
 @admin_routes.route('/admin/projects/<int:user_id>')
 @login_required
+@admin_required
 def view_student_projects(user_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     user = User.query.get_or_404(user_id)
     projects = Project.query.filter_by(student_id=user.id).all()
@@ -325,10 +342,8 @@ def view_student_projects(user_id):
 
 @admin_routes.route('/admin/projects/<int:project_id>/tasks', methods=['GET'])
 @login_required
+@admin_required
 def view_project_tasks(project_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     user_id = request.args.get('user_id')
     user = User.query.get_or_404(user_id) if user_id else None
@@ -353,10 +368,8 @@ def view_project_tasks(project_id):
 
 @admin_routes.route('/admin/projects/tasks/move/<int:task_id>', methods=['POST'])
 @login_required
+@admin_required
 def move_task(task_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     task = Task.query.get_or_404(task_id)
     new_status = request.form.get('status')  # Get the new status from the form
@@ -368,10 +381,8 @@ def move_task(task_id):
 
 @admin_routes.route('/admin/projects/tasks/add/<int:project_id>', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def add_task(project_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     project = Project.query.get_or_404(project_id) 
 
@@ -394,10 +405,8 @@ def add_task(project_id):
 
 @admin_routes.route('/admin/projects/tasks/edit/<int:task_id>', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def edit_task(task_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     task = Task.query.get_or_404(task_id)
 
@@ -416,10 +425,8 @@ def edit_task(task_id):
 
 @admin_routes.route('/admin/projects/tasks/delete/<int:task_id>', methods=['POST'])
 @login_required
+@admin_required
 def delete_task(task_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     task = Task.query.get_or_404(task_id)
     db.session.delete(task)
@@ -430,10 +437,8 @@ def delete_task(task_id):
 
 @admin_routes.route('/admin/projects/delete/<int:project_id>', methods=['POST'])
 @login_required
+@admin_required
 def delete_project(project_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     project = Project.query.get_or_404(project_id)
 
@@ -457,10 +462,8 @@ def delete_project(project_id):
 
 @admin_routes.route('/admin/assign_students', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def assign_students():
-    if current_user.role != 'admin':
-        flash_unique('Access denied.', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     # Fetch mini-admins and unassigned students
     mini_admins = User.query.filter_by(role='mini-admin', is_verified=True).all()
@@ -470,7 +473,7 @@ def assign_students():
         selected_miniadmin = request.form.get('miniadmin_id')
 
         if not selected_miniadmin:
-            flash_unique('Mini-admin selection is required!', 'danger')
+            flash_unique('Mentor selection is required!', 'info', persistent=False)
             return redirect(url_for('admin_routes.assign_students'))
 
         selected_students = request.form.getlist('students')
@@ -491,11 +494,8 @@ def assign_students():
 
 @admin_routes.route('/admin/unassign_student', methods=['POST'])
 @login_required
+@admin_required
 def unassign_student():
-    if current_user.role != 'admin':
-        flash_unique('Access denied.', 'danger')
-        return redirect(url_for('auth_routes.login'))
-
     student_id = request.form.get('student_id')
     miniadmin_id = request.form.get('miniadmin_id')
 
@@ -520,10 +520,8 @@ def unassign_student():
 
 @admin_routes.route('/admin/unassign_all', methods=['POST'])
 @login_required
+@admin_required
 def unassign_all():
-    if current_user.role != 'admin':
-        flash_unique('Access denied.', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     miniadmin_id = request.form.get('miniadmin_id')
 
@@ -550,10 +548,8 @@ def unassign_all():
 # ----------------------------- Admin Mentor Project Managment --------------------------------
 @admin_routes.route('/admin/mentor/project', methods=['GET'])
 @login_required
+@admin_required
 def mentor_project():
-    if current_user.role != 'admin':
-        flash_unique('Access denied.', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     mini_admins = User.query.filter_by(role='mini-admin').all()
     
@@ -574,10 +570,8 @@ def mentor_project():
 
 @admin_routes.route('/admin/mentor/project/<int:miniadmin_id>', methods=['GET'])
 @login_required
+@admin_required
 def view_mentor_projects(miniadmin_id):
-    if current_user.role != 'admin':
-        flash_unique('Access denied.', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     mini_admin = User.query.get_or_404(miniadmin_id)
 
@@ -596,10 +590,8 @@ def view_mentor_projects(miniadmin_id):
 
 @admin_routes.route('/admin/mentor/projects/<int:project_id>/tasks', methods=['GET'])
 @login_required
+@admin_required
 def view_miniadmin_project_tasks(project_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     project = MiniAdminProject.query.get_or_404(project_id)
 
@@ -626,10 +618,8 @@ def view_miniadmin_project_tasks(project_id):
 
 @admin_routes.route('/admin/mentor/projects/<int:project_id>/add_task', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def add_miniadmin_task(project_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
     
     project = MiniAdminProject.query.get_or_404(project_id) 
 
@@ -657,10 +647,8 @@ def add_miniadmin_task(project_id):
 
 @admin_routes.route('/admin/mentor/projects/delete_task/<int:task_id>', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def delete_miniadmin_task(task_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     task = MiniAdminProjectTask.query.get_or_404(task_id)
     db.session.delete(task)
@@ -670,10 +658,8 @@ def delete_miniadmin_task(task_id):
 
 @admin_routes.route('/admin/mentor/projects/tasks/edit/<int:task_id>', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def edit_miniadmin_task(task_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     task = MiniAdminProjectTask.query.get_or_404(task_id)
 
@@ -704,10 +690,8 @@ def edit_miniadmin_task(task_id):
 
 @admin_routes.route('/admin/mentor/projects/move_task/<int:task_id>', methods=['POST'])
 @login_required
+@admin_required
 def move_miniadmin_task(task_id):
-    if current_user.role != 'admin':
-        flash_unique('Unauthorized access', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     new_status = request.form.get('status')
     task = MiniAdminProjectTask.query.get_or_404(task_id)
@@ -724,10 +708,8 @@ def move_miniadmin_task(task_id):
 
 @admin_routes.route('/admin/mentor/project/<int:miniadmin_id>/create', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def update_miniadmin_project_create(miniadmin_id):
-    if current_user.role != 'admin':
-        flash_unique('Access denied.', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     mini_admin = User.query.get_or_404(miniadmin_id)
     assigned_students = User.query.filter_by(miniadmin_id=miniadmin_id).all()
@@ -793,10 +775,8 @@ def update_miniadmin_project_create(miniadmin_id):
 
 @admin_routes.route('/admin/mentor/project/delete/<int:project_id>', methods=['POST'])
 @login_required
+@admin_required
 def update_miniadmin_project_delete(project_id):
-    if current_user.role != 'admin':
-        flash_unique('Access denied.', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     project = MiniAdminProject.query.get_or_404(project_id)
 
@@ -808,10 +788,8 @@ def update_miniadmin_project_delete(project_id):
 
 @admin_routes.route('/admin/mentor/project/edit/<int:project_id>', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def update_miniadmin_project_edit(project_id):
-    if current_user.role != 'admin':
-        flash_unique('Access denied.', 'danger')
-        return redirect(url_for('auth_routes.login'))
 
     project = MiniAdminProject.query.get_or_404(project_id)
     mini_admin = User.query.get_or_404(project.miniadmin_id)
@@ -849,3 +827,33 @@ def update_miniadmin_project_edit(project_id):
         all_students=all_students, 
         assigned_students=assigned_students
     )
+
+@admin_routes.route('/admin/profile', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_profile():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if name:
+            current_user.name = name
+        
+        if new_password:
+            if new_password != confirm_password:
+                flash_unique('Passwords do not match!', 'danger', persistent=False)
+                return redirect(url_for('admin_routes.admin_profile'))
+            
+            if len(new_password) < 6:
+                flash_unique('Password must be at least 6 characters long!', 'danger', persistent=False)
+                return redirect(url_for('admin_routes.admin_profile'))
+            # Hash the new password before saving
+            hashed_password = generate_password_hash(new_password, method='pbkdf2:sha256')
+            current_user.password = hashed_password
+        
+        db.session.commit()
+        flash_unique('Profile updated successfully!', 'success', persistent=False)
+        return redirect(url_for('admin_routes.admin_profile'))
+
+    return render_template('admin/profile.html', user=current_user)

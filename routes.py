@@ -101,7 +101,7 @@ def forgot_password():
             session['otp'] = str(otp)
             session['otp_attempts'] = 0
 
-            msg = Message('Your OTP for Password Reset', sender='your_email@gmail.com', recipients=[email])
+            msg = Message('Your OTP for Password Reset', sender='sarimtesteverything@gmail.com', recipients=[email])
             msg.body = f'Your OTP is: {otp}'
             mail.send(msg)
 

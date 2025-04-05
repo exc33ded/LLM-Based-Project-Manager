@@ -56,4 +56,12 @@
 
 </form>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const startDateInput = document.getElementById("due_date");
+        const today = new Date().toISOString().split("T")[0];
+        startDateInput.setAttribute("min", today);
+    });
+</script>
+
 {% endblock %}
