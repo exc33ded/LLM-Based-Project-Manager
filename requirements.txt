@@ -89,6 +89,7 @@ typing-inspect==0.9.0
 typing_extensions==4.12.2
 uritemplate==4.1.1
 urllib3==2.3.0
+waitress==3.0.2
 Werkzeug==3.0.4
 WTForms==3.1.2
 yarl==1.18.3

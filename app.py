@@ -6,6 +6,7 @@ from extensions import db, login_manager, mail
 from models import User  
 from werkzeug.security import generate_password_hash
 from dotenv import load_dotenv  
+from waitress import serve
 
 app = Flask(__name__)
 
@@ -32,7 +33,7 @@ login_manager.init_app(app)
 @login_manager.user_loader
 def load_user(user_id):
     # Query the user by user_id
-    user = User.query.get(int(user_id))
+    user = db.session.get(User, int(user_id))
     
     if user:
         # Check the role and log accordingly
@@ -84,4 +85,5 @@ if __name__ == "__main__":
             print("Admin user already exists!")
 
 
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # app.run(host='0.0.0.0', port=5000, debug=True)
+    serve(app, host='0.0.0.0', port=5000, threads=2)
