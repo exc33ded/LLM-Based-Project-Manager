@@ -263,31 +263,35 @@
         position: relative;
         overflow: hidden;
         cursor: pointer;
-        /* Optional: Indicates hoverable area */
+        transition: all 0.3s ease;
+        /* Smooth transition for height and other properties */
+        min-height: 150px;
+        /* Set a minimum height for the card */
     }
 
     .task-category .summary-section {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(255, 255, 255, 0.95);
+        max-height: 0;
+        /* Initially hide the summary section */
         opacity: 0;
-        transform: translateY(10px);
-        transition: opacity 0.3s ease, transform 0.3s ease;
-        pointer-events: none;
-        /* Prevents blocking interaction */
-        z-index: 10;
-        padding: 16px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+        /* Smooth transition for expansion */
     }
 
     .task-category .bg-white:hover .summary-section {
+        max-height: 500px;
+        /* Adjust this value based on the maximum expected height */
         opacity: 1;
-        transform: translateY(0);
-        pointer-events: auto;
-        /* Enable interaction only when hovered */
+    }
+
+    .task-category .bg-white .buttons-container {
+        margin-top: 16px;
+        /* Space between the summary and buttons */
+    }
+
+    .task-category .bg-white form {
+        margin-top: 16px;
+        /* Space between the buttons and the form */
     }
 </style>
 

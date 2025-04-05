@@ -28,6 +28,12 @@
             <div class="bg-white p-4 rounded-lg shadow-2xl">
                 <strong class="text-lg">{{ task.title }}</strong>
                 <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+
+                <div class="summary-section">
+                    <h4 class="font-semibold text-gray-700 mb-2">Description:</h4>
+                    <p class="text-sm text-gray-600">{{ task.description }}</p>
+                </div>
+
                 <div class="mt-4 flex justify-between items-center">
                     <form method="POST"
                         action="{{ url_for('miniadmin_routes.delete_task_for_miniadmin_project', project_id=project.id, task_id=task.id) }}">
@@ -71,6 +77,12 @@
             <div class="bg-white p-4 rounded-lg shadow-2xl">
                 <strong class="text-lg">{{ task.title }}</strong>
                 <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+
+                <div class="summary-section">
+                    <h4 class="font-semibold text-gray-700 mb-2">Description:</h4>
+                    <p class="text-sm text-gray-600">{{ task.description }}</p>
+                </div>
+
                 <div class="mt-4 flex justify-between items-center">
                     <form method="POST"
                         action="{{ url_for('miniadmin_routes.delete_task_for_miniadmin_project', project_id=project.id, task_id=task.id) }}">
@@ -114,6 +126,12 @@
             <div class="bg-white p-4 rounded-lg shadow-2xl">
                 <strong class="text-lg">{{ task.title }}</strong>
                 <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+
+                <div class="summary-section">
+                    <h4 class="font-semibold text-gray-700 mb-2">Description:</h4>
+                    <p class="text-sm text-gray-600">{{ task.description }}</p>
+                </div>
+
                 <div class="mt-4 flex justify-between items-center">
                     <form method="POST"
                         action="{{ url_for('miniadmin_routes.delete_task_for_miniadmin_project', project_id=project.id, task_id=task.id) }}">
@@ -157,6 +175,12 @@
             <div class="bg-white p-4 rounded-lg shadow-2xl">
                 <strong class="text-lg">{{ task.title }}</strong>
                 <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+
+                <div class="summary-section">
+                    <h4 class="font-semibold text-gray-700 mb-2">Description:</h4>
+                    <p class="text-sm text-gray-600">{{ task.description }}</p>
+                </div>
+
                 <div class="mt-4 flex justify-between items-center">
                     <form method="POST"
                         action="{{ url_for('miniadmin_routes.delete_task_for_miniadmin_project', project_id=project.id, task_id=task.id) }}">

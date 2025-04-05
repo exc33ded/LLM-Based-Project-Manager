@@ -28,6 +28,12 @@
             <div class="bg-white p-4 rounded-lg shadow-2xl">
                 <strong class="text-lg">{{ task.title }}</strong>
                 <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+
+                <div class="summary-section">
+                    <h4 class="font-semibold text-gray-700 mb-2">Description:</h4>
+                    <p class="text-sm text-gray-600">{{ task.description }}</p>
+                </div>
+
                 <div class="mt-4 flex justify-between items-center">
                     <form action="{{ url_for('miniadmin_routes.delete_task', task_id=task.id) }}" method="POST"
                         style="display:inline;">
@@ -61,6 +67,12 @@
             <div class="bg-white p-4 rounded-lg shadow-2xl">
                 <strong class="text-lg">{{ task.title }}</strong>
                 <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+
+                <div class="summary-section">
+                    <h4 class="font-semibold text-gray-700 mb-2">Description:</h4>
+                    <p class="text-sm text-gray-600">{{ task.description }}</p>
+                </div>
+
                 <div class="mt-4 flex justify-between items-center">
                     <form action="{{ url_for('miniadmin_routes.delete_task', task_id=task.id) }}" method="POST"
                         style="display:inline;">
@@ -94,6 +106,12 @@
             <div class="bg-white p-4 rounded-lg shadow-2xl">
                 <strong class="text-lg">{{ task.title }}</strong>
                 <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+
+                <div class="summary-section">
+                    <h4 class="font-semibold text-gray-700 mb-2">Description:</h4>
+                    <p class="text-sm text-gray-600">{{ task.description }}</p>
+                </div>
+
                 <div class="mt-4 flex justify-between items-center">
                     <form action="{{ url_for('miniadmin_routes.delete_task', task_id=task.id) }}" method="POST"
                         style="display:inline;">
@@ -127,6 +145,12 @@
             <div class="bg-white p-4 rounded-lg shadow-2xl">
                 <strong class="text-lg">{{ task.title }}</strong>
                 <p class="text-sm text-gray-600">Due: {{ task.due_date.strftime('%Y-%m-%d') }}</p>
+
+                <div class="summary-section">
+                    <h4 class="font-semibold text-gray-700 mb-2">Description:</h4>
+                    <p class="text-sm text-gray-600">{{ task.description }}</p>
+                </div>
+
                 <div class="mt-4 flex justify-between items-center">
                     <form action="{{ url_for('miniadmin_routes.delete_task', task_id=task.id) }}" method="POST"
                         style="display:inline;">
@@ -199,39 +223,39 @@
     </script>
 
     <style>
-        .task-category .bg-white {
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            /* Smooth transition for height and other properties */
-            min-height: 150px;
-            /* Set a minimum height for the card */
-        }
+            .task-category .bg-white {
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        /* Smooth transition for height and other properties */
+        min-height: 150px;
+        /* Set a minimum height for the card */
+    }
 
-        .task-category .summary-section {
-            max-height: 0;
-            /* Initially hide the summary section */
-            opacity: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease, opacity 0.3s ease;
-            /* Smooth transition for expansion */
-        }
+    .task-category .summary-section {
+        max-height: 0;
+        /* Initially hide the summary section */
+        opacity: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+        /* Smooth transition for expansion */
+    }
 
-        .task-category .bg-white:hover .summary-section {
-            max-height: 500px;
-            /* Adjust this value based on the maximum expected height */
-            opacity: 1;
-        }
+    .task-category .bg-white:hover .summary-section {
+        max-height: 500px;
+        /* Adjust this value based on the maximum expected height */
+        opacity: 1;
+    }
 
-        .task-category .bg-white .buttons-container {
-            margin-top: 16px;
-            /* Space between the summary and buttons */
-        }
+    .task-category .bg-white .buttons-container {
+        margin-top: 16px;
+        /* Space between the summary and buttons */
+    }
 
-        .task-category .bg-white form {
-            margin-top: 16px;
-            /* Space between the buttons and the form */
-        }
+    .task-category .bg-white form {
+        margin-top: 16px;
+        /* Space between the buttons and the form */
+    }
     </style>
     {% endblock %}

@@ -68,6 +68,8 @@ class LongTermMemory(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)  # Link to project
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Link to user
     chat_content = db.Column(db.Text, nullable=False)  # Chat response or conversation
+    important_content = db.Column(db.Text, nullable=True)  # AI-detected important info
+    importance_score = db.Column(db.Float, default=0.5)  # AI-assigned score (0.0 to 1.0)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)  # Timestamp for when the chat was stored
 
     def __repr__(self):

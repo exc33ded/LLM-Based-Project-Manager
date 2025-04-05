@@ -22,7 +22,7 @@ def admin_login():
         email = request.form['email']
         password = request.form['password']
         
-        user = User.query.filter_by(email=email, role='admin').first()  # Check for admin role
+        user = User.query.filter_by(email=email, role='admin').first()  
         if user and check_password_hash(user.password, password):
             login_user(user)
             flash_unique('Admin login successful!', 'success')

@@ -13,6 +13,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 import markdown
 from dotenv import load_dotenv
 from utils.no_again_flash import flash_unique
+from utils.importance_detection import detect_important_info_with_ai
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
@@ -737,78 +738,108 @@ def view_tasks(project_id):
         return redirect(url_for('student_routes.project_archive'))
 
     tasks = Task.query.filter_by(project_id=project_id).all()
-
     for task in tasks:
         check_task_status(task)
 
+    # Categorize tasks
     backlog_tasks = Task.query.filter_by(project_id=project_id, status='Backlog').all()
     in_progress_tasks = Task.query.filter_by(project_id=project_id, status='In Progress').all()
     progressed_tasks = Task.query.filter_by(project_id=project_id, status='Progressed').all()
     finished_tasks = Task.query.filter_by(project_id=project_id, status='Finished').all()
 
-    ##########################################################################################
-    # Get chat history for the project
+    # Memory management
     memory = get_memory(project_id)
     chat_history = memory['messages']
+
+    # Load long term memory and parse important content list
+    long_memory = LongTermMemory.query.filter_by(project_id=project_id).first()
+    important_contents = []
+    if long_memory and long_memory.important_content:
+        try:
+            important_contents = json.loads(long_memory.important_content)
+        except Exception:
+            important_contents = []
 
     if request.method == 'POST':
         user_message = request.form.get('message')
 
         if user_message and user_message.strip():
-            # Add user message to memory buffer
-            add_message_to_buffer(memory, 'User', render_markdown(user_message))
+            rendered_message = render_markdown(user_message)
+            add_message_to_buffer(memory, 'User', rendered_message)
 
-            # Retrieve past messages (history) for context
             previous_conversations = "\n".join(
                 [f"{msg['sender']}: {msg['content']}" for msg in chat_history[-5:]]
             )
 
-            # Create the prompt including past conversations
+            important_context = "\n".join([f"- {info}" for info in important_contents])
+
+            # Construct the prompt for AI
             prompt = f"""
-            You are an AI assistant helping students with their project tasks. The project details are as follows:
+            You are an AI assistant helping students with their project tasks.
 
             Project Summary:
             {project.summary}
 
+            Important Information So Far:
+            {important_context or 'None yet.'}
+
             Previous Conversations:
             {previous_conversations}
 
-            The student has asked the following question: "{user_message}"
+            The student has asked: "{user_message}"
             """
 
-            # Get AI response based on the history and current user message
+            # Get AI response
             ai_response = chat_model.invoke([HumanMessage(content=prompt)]).content or \
                           f"Here's a bit more information about the project: {project.summary}."
+            rendered_ai_response = render_markdown(ai_response)
+            add_message_to_buffer(memory, 'AI', rendered_ai_response)
 
-            # Add AI response to memory buffer
-            add_message_to_buffer(memory, 'AI', render_markdown(ai_response))
-
-            # Save updated memory to the database in JSON format
+            # Save full chat
             chat_data = {"User": [], "AI": []}
             for msg in memory['messages']:
-                if msg['sender'] == 'AI':
-                    chat_data["AI"].append(msg['content'])
-                else:
-                    chat_data["User"].append(msg['content'])
+                chat_data[msg['sender']].append(msg['content'])
 
-            long_memory = LongTermMemory.query.filter_by(project_id=project_id).first()
+            # Detect important content from user's message
+            important_content, importance_score = detect_important_info_with_ai(
+                chat_model, user_message, project.summary
+            )
+
+            # print(f"Important Content: {important_content}, Score: {importance_score}, User Message: {user_message}")
+
+            if important_content:
+                important_contents.append(important_content)
+
+            # Save/update long memory
             if long_memory:
                 long_memory.chat_content = json.dumps(chat_data)
+                long_memory.important_content = json.dumps(important_contents)
+                long_memory.importance_score = importance_score
             else:
                 long_memory = LongTermMemory(
                     project_id=project_id,
                     user_id=project.student_id,
-                    chat_content=json.dumps(chat_data)
+                    chat_content=json.dumps(chat_data),
+                    important_content=json.dumps(important_contents),
+                    importance_score=importance_score
                 )
                 db.session.add(long_memory)
+
             db.session.commit()
 
         return jsonify({'chat_history': chat_history})
 
-    return render_template('student/tasks.html', project=project, user=current_user,
-                           backlog_tasks=backlog_tasks, in_progress_tasks=in_progress_tasks,
-                           progressed_tasks=progressed_tasks, finished_tasks=finished_tasks,
-                           chat_history=chat_history)
+    return render_template(
+        'student/tasks.html',
+        project=project,
+        user=current_user,
+        backlog_tasks=backlog_tasks,
+        in_progress_tasks=in_progress_tasks,
+        progressed_tasks=progressed_tasks,
+        finished_tasks=finished_tasks,
+        chat_history=chat_history
+    )
+
     
 @student_routes.route('/student/save_chat/<project_id>', methods=['POST'])
 def save_chat(project_id):
