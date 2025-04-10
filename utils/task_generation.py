@@ -53,7 +53,7 @@ def generate_dynamic_coding_tasks(summary):
         "Date": "YYYY-MM-DD"
       }}
       // Continue for all tasks.
-    }}
+    }} 
     """
 
     # API call

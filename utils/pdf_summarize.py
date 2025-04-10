@@ -20,7 +20,7 @@ generation_config = {
 
 # Initialize the GenerativeModel
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
+    model_name="gemini-2.0-flash-thinking-exp-01-21",
     generation_config=generation_config
 )
 
