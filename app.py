@@ -85,5 +85,5 @@ if __name__ == "__main__":
             print("Admin user already exists!")
 
 
-    # app.run(host='0.0.0.0', port=5000, debug=True)
-    serve(app, host='0.0.0.0', port=5000, threads=2)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+    # serve(app, host='0.0.0.0', port=5000, threads=2)

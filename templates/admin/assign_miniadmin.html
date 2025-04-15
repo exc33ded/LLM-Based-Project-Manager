@@ -4,7 +4,7 @@
 <h1>Assign Mini-Admin to Students</h1>
 
 <form method="POST" action="{{ url_for('admin_routes.assign_miniadmin') }}">
-    <label for="miniadmin">Select Mini-Admin:</label>
+    <label for="miniadmin">Select Mentor:</label>
     <select name="miniadmin" id="miniadmin">
         {% for miniadmin in mini_admins %}
             <option value="{{ miniadmin.id }}">{{ miniadmin.name }}</option>

@@ -152,11 +152,11 @@ Admin Team
 """
             mail.send(msg)
 
-            # Delete the ID card file after verification
-            if user.id_card:
-                id_path = os.path.join(current_app.root_path, 'static', 'uploads', 'id', user.id_card)
-                if os.path.exists(id_path):
-                    os.remove(id_path)
+            # # Delete the ID card file after verification
+            # if user.id_card:
+            #     id_path = os.path.join(current_app.root_path, 'static', 'uploads', 'id', user.id_card)
+            #     if os.path.exists(id_path):
+            #         os.remove(id_path)
 
         elif verification_status == 'not_verify':
             user.is_verified = False
@@ -464,10 +464,12 @@ def delete_project(project_id):
 @login_required
 @admin_required
 def assign_students():
-
     # Fetch mini-admins and unassigned students
     mini_admins = User.query.filter_by(role='mini-admin', is_verified=True).all()
     students = User.query.filter_by(role='student', miniadmin_id=None, is_verified=True).all()
+
+    # Check if there are any students to assign
+    has_students = len(students) > 0
 
     if request.method == 'POST':
         selected_miniadmin = request.form.get('miniadmin_id')
@@ -485,10 +487,14 @@ def assign_students():
             db.session.commit()
 
         flash_unique('Students assigned successfully!', 'success', persistent=False)
-
         return redirect(url_for('admin_routes.assign_students'))
 
-    return render_template('admin/assign_students.html', mini_admins=mini_admins, students=students)
+    return render_template(
+        'admin/assign_students.html', 
+        mini_admins=mini_admins, 
+        students=students,
+        has_students=has_students  # Pass this variable to the template
+    )
 
 
 
@@ -857,3 +863,54 @@ def admin_profile():
         return redirect(url_for('admin_routes.admin_profile'))
 
     return render_template('admin/profile.html', user=current_user)
+
+@admin_routes.route('/admin/manage_users')
+@login_required
+@admin_required
+def manage_users():
+    # Get all users except admin
+    verified_users = User.query.filter(
+        User.role != 'admin',
+        User.is_verified == True
+    ).all()
+    
+    unverified_users = User.query.filter(
+        User.role != 'admin',
+        User.is_verified == False
+    ).all()
+    
+    return render_template(
+        'admin/manage_users.html',
+        verified_users=verified_users,
+        unverified_users=unverified_users
+    )
+
+@admin_routes.route('/admin/toggle_verification/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def toggle_verification(user_id):
+    user = User.query.get_or_404(user_id)
+    
+    if user.role == 'admin':
+        flash_unique("Cannot modify admin verification status!", 'danger')
+        return redirect(url_for('admin_routes.manage_users'))
+    
+    # Toggle verification status
+    user.is_verified = not user.is_verified
+    
+    # If unverifying, handle role-specific actions
+    if not user.is_verified:
+        if user.role == 'student':
+            user.miniadmin_id = None
+        elif user.role == 'mini-admin':
+            # Unassign all students from this mini-admin
+            students = User.query.filter_by(miniadmin_id=user.id).all()
+            for student in students:
+                student.miniadmin_id = None
+    
+    db.session.commit()
+    
+    status = "verified" if user.is_verified else "unverified"
+    flash_unique(f"User {user.name} has been {status}.", 'success', persistent=False)
+    
+    return redirect(url_for('admin_routes.manage_users'))

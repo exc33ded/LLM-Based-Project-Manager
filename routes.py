@@ -80,8 +80,10 @@ def login():
                 
                 if user.role == 'mini-admin':
                     return redirect(url_for('miniadmin_routes.miniadmin_dashboard'))
-                else:
+                elif user.role == 'student':
                     return redirect(url_for('student_routes.student_dashboard'))
+                else:
+                    flash('Invalid Login!! Please Contact Admin', 'danger')
             else:
                 flash('Your account is not verified yet.', 'danger')
         else:

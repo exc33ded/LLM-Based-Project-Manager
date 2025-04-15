@@ -1,0 +1,61 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block content %}
+<div class="mx-auto p-8">
+    <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">Manage Users</h1>
+
+    <!-- Verified Users Table -->
+    <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Verified Users</h2>
+        <div class="overflow-x-auto">
+            <table id="verifiedTable" class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100 text-gray-800">
+                    <tr>
+                        <th class="px-4 py-2 text-left">Name</th>
+                        <th class="px-4 py-2 text-left">Email</th>
+                        <th class="px-4 py-2 text-left">Role</th>
+                        <th class="px-4 py-2 text-left">Roll No</th>
+                        <th class="px-4 py-2 text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for user in verified_users %}
+                    <tr>
+                        <td class="px-4 py-2">{{ user.name }}</td>
+                        <td class="px-4 py-2">{{ user.email }}</td>
+                        <td class="px-4 py-2">{{ user.role }}</td>
+                        <td class="px-4 py-2">{{ user.rollno }}</td>
+                        <td class="px-4 py-2">
+                            <form action="{{ url_for('admin_routes.toggle_verification', user_id=user.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to unverify this user?')">
+                                <button type="submit" class="text-white bg-yellow-600 hover:bg-yellow-700 font-medium rounded px-4 py-1 text-sm">
+                                    Unverify
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-gray-500 py-4">No verified users found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Go Back Button -->
+    <a href="{{ url_for('admin_routes.verify_users') }}"
+   class="text-white bg-gray-600 hover:bg-gray-700 focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-gray-500 dark:hover:bg-gray-600 focus:outline-none dark:focus:ring-gray-800">
+   ← Go Back
+</a>
+
+
+    <!-- DataTables JS -->
+    <script>
+        $(document).ready(function () {
+            $('#verifiedTable').DataTable();
+            $('#unverifiedTable').DataTable();
+        });
+    </script>
+</div>
+{% endblock %}

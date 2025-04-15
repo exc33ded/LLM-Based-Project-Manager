@@ -3,7 +3,7 @@
 {% block content %}
 <div class="max-w-3xl mx-auto p-8">
     <!-- Header -->
-    <h2 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">Assign Students to Mini-Admins</h2>
+    <h2 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">Assign Students to Mentor</h2>
 
     <!-- Form -->
     <form method="POST" class="bg-white p-8 rounded-lg shadow-lg space-y-6">
@@ -40,7 +40,7 @@
         <!-- Submit Button -->
         <div>
             <button type="submit" 
-                    class="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    class="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500" {% if not has_students %}disabled{% endif %}>
                 Assign Selected Students
             </button>
         </div>
