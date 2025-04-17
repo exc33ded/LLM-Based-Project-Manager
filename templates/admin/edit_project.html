@@ -24,15 +24,15 @@
     <!-- Upload New Synopsis (Optional) -->
     <div>
         <label for="synopsis" class="block text-sm font-medium text-gray-700">Upload New Synopsis (Optional):</label>
-        <input type="file" name="synopsis" id="synopsis"
+        <input type="file" accept="application/pdf" name="synopsis" id="synopsis"
             class="mt-1 block w-full text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500">
     </div>
 
     <!-- Current Summary -->
     <div>
         <label class="block text-sm font-medium text-gray-700">Current Summary:</label>
-        <textarea readonly
-            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm">{{ project.summary }}</textarea>
+        <textarea rows="8" readonly
+            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"  rows='8'>{{ project.summary }}</textarea rows="8">
     </div>
 
     <!-- Current Categories -->
