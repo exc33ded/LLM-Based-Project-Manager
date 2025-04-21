@@ -95,6 +95,10 @@ body {
     border: 1px solid rgba(226, 232, 240, 0.8);
     transition: all 0.4s ease;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
 }
 
 .feature-card::before {
@@ -121,6 +125,17 @@ body {
 
 .feature-card:hover::before {
     left: 100%;
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #4299e1;
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover .feature-icon {
+    transform: scale(1.2) rotate(5deg);
 }
 
 .animate-on-scroll {
@@ -151,14 +166,92 @@ body {
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
+
+/* Typing animation */
+.typing-animation {
+    border-right: 3px solid #4299e1;
+    white-space: nowrap;
+    overflow: hidden;
+    margin: 0 auto;
+    animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+}
+
+@keyframes blink-caret {
+    from, to { border-color: transparent }
+    50% { border-color: #4299e1 }
+}
+
+/* Particle canvas */
+#particles-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Pulsing button */
+.pulsing-button {
+    position: relative;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    border-radius: 50px;
+    font-weight: bold;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(66, 153, 225, 0.3);
+}
+
+.pulsing-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 7px 14px rgba(66, 153, 225, 0.4);
+}
+
+.pulsing-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 150%;
+    height: 150%;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+    70% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+/* Confetti */
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #4299e1;
+    opacity: 0;
+    pointer-events: none;
+}
 </style>
 
+<canvas id="particles-canvas"></canvas>
 <div class="stars" id="stars"></div>
 
 <div class="relative flex flex-col items-center justify-center min-h-screen text-center z-10">
     <div class="content-overlay">
         <!-- Main Content -->
-        <h1 class="text-6xl font-bold heading-gradient mt-12 animate-on-scroll floating-animation animate-visible p-4">
+        <h1 class="text-6xl font-bold heading-gradient mt-12 animate-on-scroll floating-animation animate-visible p-4 typing-animation">
             Welcome to Intelligent Project Manager for AMU
         </h1>
         <p class="text-xl text-gray-600 mt-6 animate-on-scroll">
@@ -166,13 +259,13 @@ body {
         </p>
 
         <div class="flex space-x-16 mt-16 text-center">
-            <div class="stat-box animate-on-scroll">
+            <div class="stat-box animate-on-scroll" id="projects-stat">
                 <h3 class="text-5xl font-bold text-gray-800">
                     <span class="counter" data-target="{{ project_count }}">0</span>+
                 </h3>
                 <p class="text-gray-600 text-lg mt-2">Projects Completed</p>
             </div>
-            <div class="stat-box animate-on-scroll">
+            <div class="stat-box animate-on-scroll" id="users-stat">
                 <h3 class="text-5xl font-bold text-gray-800">
                     <span class="counter" data-target="{{ user_count }}">0</span>+
                 </h3>
@@ -183,17 +276,24 @@ body {
         <!-- Features Section -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-16 max-w-6xl px-4">
             <div class="feature-card p-8 rounded-xl shadow-lg animate-on-scroll">
+                <div class="feature-icon">📊</div>
                 <h2 class="text-2xl font-bold text-gray-800">Track Your Progress</h2>
                 <p class="text-gray-600 mt-3">Enterprise-grade timeline tracking and milestone management.</p>
             </div>
             <div class="feature-card p-8 rounded-xl shadow-lg animate-on-scroll">
+                <div class="feature-icon">👥</div>
                 <h2 class="text-2xl font-bold text-gray-800">Collaborate with Teams</h2>
                 <p class="text-gray-600 mt-3">Secure team communication and resource management.</p>
             </div>
             <div class="feature-card p-8 rounded-xl shadow-lg animate-on-scroll">
+                <div class="feature-icon">📈</div>
                 <h2 class="text-2xl font-bold text-gray-800">Detailed Analytics</h2>
                 <p class="text-gray-600 mt-3">Advanced metrics and performance insights.</p>
             </div>
+        </div>
+
+        <div class="mt-16 animate-on-scroll">
+            <a href="/login" class="pulsing-button inline-block">Get Started Now</a>
         </div>
     </div>
 </div>
@@ -273,6 +373,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const target = parseInt(counter.getAttribute('data-target'));
         const duration = 2000;
         let startTime = null;
+        let completed = false;
 
         function easeOutQuart(x) {
             return 1 - Math.pow(1 - x, 4);
@@ -290,10 +391,130 @@ document.addEventListener("DOMContentLoaded", function () {
                 requestAnimationFrame(animate);
             } else {
                 counter.textContent = target;
+                if (!completed) {
+                    completed = true;
+                    createConfetti(counter.closest('.stat-box'));
+                }
             }
         }
 
         requestAnimationFrame(animate);
+    });
+
+    // Particle effect
+    const canvas = document.getElementById('particles-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = [];
+    const particleCount = 50;
+    let hue = 0;
+
+    class Particle {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.size = Math.random() * 5 + 1;
+            this.speedX = Math.random() * 3 - 1.5;
+            this.speedY = Math.random() * 3 - 1.5;
+            this.color = `hsla(${hue}, 100%, 50%, 0.8)`;
+        }
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+            if (this.size > 0.2) this.size -= 0.1;
+        }
+        draw() {
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function createParticles(e) {
+        const xPos = e.x;
+        const yPos = e.y;
+        for (let i = 0; i < 5; i++) {
+            particles.push(new Particle(xPos, yPos));
+        }
+    }
+
+    function handleParticles() {
+        for (let i = 0; i < particles.length; i++) {
+            particles[i].update();
+            particles[i].draw();
+            
+            if (particles[i].size <= 0.3) {
+                particles.splice(i, 1);
+                i--;
+            }
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        handleParticles();
+        hue += 2;
+        requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', function() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+    window.addEventListener('mousemove', createParticles);
+    animate();
+
+    // Confetti effect
+    function createConfetti(element) {
+        const rect = element.getBoundingClientRect();
+        const confettiCount = 50;
+        const colors = ['#4299e1', '#3182ce', '#2b6cb0', '#63b3ed', '#90cdf4'];
+        
+        for (let i = 0; i < confettiCount; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.left = rect.left + rect.width / 2 + 'px';
+            confetti.style.top = rect.top + rect.height / 2 + 'px';
+            confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+            document.body.appendChild(confetti);
+            
+            const size = Math.random() * 10 + 5;
+            confetti.style.width = `${size}px`;
+            confetti.style.height = `${size}px`;
+            
+            const destinationX = rect.left + Math.random() * rect.width;
+            const destinationY = rect.top + Math.random() * rect.height - 100;
+            
+            const animation = confetti.animate([
+                { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
+                { transform: `translate(${(destinationX - rect.left) * 2}px, ${destinationY - rect.top}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+            ], {
+                duration: Math.random() * 1000 + 1000,
+                easing: 'cubic-bezier(0,0,0.2,1)'
+            });
+            
+            animation.onfinish = () => {
+                confetti.remove();
+            };
+        }
+    }
+
+    // Feature card interactions
+    document.querySelectorAll('.feature-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            const icon = this.querySelector('.feature-icon');
+            icon.style.transform = 'scale(1.2) rotate(5deg)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            const icon = this.querySelector('.feature-icon');
+            icon.style.transform = 'scale(1) rotate(0deg)';
+        });
     });
 });
 </script>

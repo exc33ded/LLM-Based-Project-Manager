@@ -109,7 +109,7 @@ def admin_dashboard():
 @login_required
 @admin_required
 def admin_assignment_overview():
-    mini_admins = User.query.filter_by(role='mini-admin').all()
+    mini_admins = User.query.filter_by(role='mini-admin', is_verified=True).all()
     
     return render_template('admin/admin_assignments.html', mini_admins=mini_admins)
 
@@ -479,12 +479,42 @@ def assign_students():
             return redirect(url_for('admin_routes.assign_students'))
 
         selected_students = request.form.getlist('students')
-
         miniadmin = User.query.get(selected_miniadmin)
+        
+        # Create a list to store assigned student names for the email
+        assigned_student_names = []
+        
         for student_id in selected_students:
             student = User.query.get(student_id)
             student.miniadmin_id = miniadmin.id
+            assigned_student_names.append(student.name)
             db.session.commit()
+
+        # Send email to mini-admin
+        if assigned_student_names:
+            msg = Message(
+                subject='New Students Assigned',
+                sender='admin@gmail.com',  # replace with your sender email
+                recipients=[miniadmin.email]
+            )
+            
+            # Create email body with the list of assigned students
+            student_list = "\n".join(f"- {name}" for name in assigned_student_names)
+            msg.body = f"""Dear {miniadmin.name},
+
+The following students have been assigned to you:
+
+{student_list}
+
+Please log in to your dashboard to view their details and start managing their projects.
+
+Best regards,
+Admin Team"""
+            
+            try:
+                mail.send(msg)
+            except Exception as e:
+                flash_unique(f"Students assigned but email notification failed: {str(e)}", "warning", persistent=False)
 
         flash_unique('Students assigned successfully!', 'success', persistent=False)
         return redirect(url_for('admin_routes.assign_students'))
@@ -521,7 +551,7 @@ def unassign_student():
     else:
         flash_unique('Student not found!', 'danger')
 
-    return redirect(url_for('admin_routes.admin_dashboard'))  # Redirect to the admin dashboard after unassignment
+    return redirect(request.referrer or url_for('admin_routes.assign_students')) 
 
 
 @admin_routes.route('/admin/unassign_all', methods=['POST'])
