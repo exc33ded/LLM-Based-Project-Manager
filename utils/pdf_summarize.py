@@ -51,13 +51,14 @@ def analyze_synopsis(file_path):
 
         # Prompt to return strict JSON
         prompt = (
-            "I have uploaded a project synopsis document. Analyze the document and provide a valid JSON object "
+            "I have uploaded a project document. Analyze the document and provide a valid JSON object "
             "with the following keys:\n\n"
-            "- 'summary': A concise and comprehensive paragraph summarizing the project, focusing on:\n"
+            "- 'summary': A concise and comprehensive paragraph summarizing the project with it's functionality, focusing on:\n"
             "  - The project's name and core objective.\n"
             "  - Key functional and non-functional requirements.\n"
             "  - Target users or beneficiaries.\n"
-            "  - Any unique or standout features.\n\n"
+            "  - Any unique or standout features.\n"
+            "  - The functionalities that the user have explicitly mentioned.\n\n"
             "- 'categories': A list of applicable project categories. Choose from:\n"
             "  ['Software Development', 'Web Development', 'Data Science', 'Artificial Intelligence', 'Cybersecurity', "
             "'IoT (Internet of Things)', 'Mobile App Development', 'Other']\n\n"
@@ -85,8 +86,8 @@ def analyze_synopsis(file_path):
         return {"error": f"An error occurred while analyzing the synopsis: {e}"}
 
 # Example usage
-if __name__ == "__main__":
-    file_path = r"E:\Projects\MINI3\Documentation\Advanced Project Manager for AMU - SRS.pdf"
-    result = analyze_synopsis(file_path)
-    print("Analysis Result (JSON):")
-    print(result)
+# if __name__ == "__main__":
+#     file_path = r"E:\Projects\MINI3\Documentation\Advanced Project Manager for AMU - SRS.pdf"
+#     result = analyze_synopsis(file_path)
+#     print("Analysis Result (JSON):")
+#     print(result)
