@@ -36,7 +36,7 @@
                     <td>{{ user.name }}</td>
                     <td>{{ user.email }}</td>
                     <td>{{ user.rollno }}</td>
-                    <td>{{ user.role }}</td>
+                    <td>{{ user.role|replace("mini-admin", "mentor") }}</td>
                     <td>{{ user.course }}</td>
                     <td>
                         <a href="{{ url_for('static', filename='uploads/id/' + user.id_card) }}" target="_blank"

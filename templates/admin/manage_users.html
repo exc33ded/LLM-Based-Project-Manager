@@ -23,7 +23,7 @@
                     <tr>
                         <td class="px-4 py-2">{{ user.name }}</td>
                         <td class="px-4 py-2">{{ user.email }}</td>
-                        <td class="px-4 py-2">{{ user.role }}</td>
+                        <td class="px-4 py-2">{{ user.role|replace("mini-admin", "mentor") }}</td>
                         <td class="px-4 py-2">{{ user.rollno }}</td>
                         <td class="px-4 py-2">
                             <form action="{{ url_for('admin_routes.toggle_verification', user_id=user.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to unverify this user?')">
@@ -48,7 +48,6 @@
    class="text-white bg-gray-600 hover:bg-gray-700 focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-gray-500 dark:hover:bg-gray-600 focus:outline-none dark:focus:ring-gray-800">
    ← Go Back
 </a>
-
 
     <!-- DataTables JS -->
     <script>

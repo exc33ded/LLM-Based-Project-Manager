@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 import os
@@ -60,6 +60,63 @@ app.register_blueprint(auth_routes)
 app.register_blueprint(admin_routes)
 app.register_blueprint(miniadmin_routes)
 app.register_blueprint(student_routes)
+
+# Generic error handler for common HTTP errors
+@app.errorhandler(400)
+def bad_request(e):
+    return render_template('errors/error.html', 
+                          error_code="400", 
+                          error_title="Bad Request", 
+                          error_message="The server could not understand your request."), 400
+
+@app.errorhandler(401)
+def unauthorized(e):
+    return render_template('errors/error.html', 
+                          error_code="401", 
+                          error_title="Unauthorized", 
+                          error_message="You need to be authenticated to access this resource."), 401
+
+@app.errorhandler(403)
+def forbidden(e):
+    return render_template('errors/error.html', 
+                          error_code="403", 
+                          error_title="Forbidden", 
+                          error_message="You don't have permission to access this resource."), 403
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('errors/error.html', 
+                          error_code="404", 
+                          error_title="Page Not Found", 
+                          error_message="The page you are looking for doesn't exist or has been moved."), 404
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    return render_template('errors/error.html', 
+                          error_code="405", 
+                          error_title="Method Not Allowed", 
+                          error_message="The method is not allowed for the requested URL."), 405
+
+@app.errorhandler(500)
+def server_error(e):
+    return render_template('errors/error.html', 
+                          error_code="500", 
+                          error_title="Server Error", 
+                          error_message="Something went wrong on our end. Please try again later."), 500
+
+# Catch-all for other server errors
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Pass through HTTP errors
+    if isinstance(e, HTTPException):
+        return e
+    
+    # Handle non-HTTP exceptions with a generic 500 page
+    return render_template('errors/error.html', 
+                          error_code="500", 
+                          error_title="Server Error", 
+                          error_message="An unexpected error occurred. Our team has been notified."), 500
+
 
 if __name__ == "__main__":
     with app.app_context():

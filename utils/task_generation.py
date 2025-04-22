@@ -241,6 +241,7 @@ def generate_dynamic_coding_tasks(summary: str) -> str:
             current_date += timedelta(days=duration)
 
         print("Task regeneration complete.")
+        print(processed_tasks)
         return json.dumps(processed_tasks, indent=2)
 
     except json.JSONDecodeError as e:
@@ -254,25 +255,25 @@ def generate_dynamic_coding_tasks(summary: str) -> str:
         raise e
     
 
-if __name__ == "__main__":
-    # Example project summary
-    project_summary = """
-    Create a Python-based web application using the Flask framework.
-    The application should allow users to register, log in, and create/manage simple text notes.
-    Notes should be stored in a PostgreSQL database.
-    The user interface should be clean and responsive, built using basic HTML, CSS, and potentially a lightweight CSS framework like Bootstrap.
-    Include basic testing for core functionalities.
-    """
+# if __name__ == "__main__":
+#     # Example project summary
+#     project_summary = """
+#     Create a Python-based web application using the Flask framework.
+#     The application should allow users to register, log in, and create/manage simple text notes.
+#     Notes should be stored in a PostgreSQL database.
+#     The user interface should be clean and responsive, built using basic HTML, CSS, and potentially a lightweight CSS framework like Bootstrap.
+#     Include basic testing for core functionalities.
+#     """
 
-    print("--- Generating Coding Tasks ---")
-    try:
-        generated_tasks_json = generate_dynamic_coding_tasks(project_summary)
-        print("\n--- Generated Tasks (JSON) ---")
-        print(generated_tasks_json)
-        print("\n--- Task Generation Successful ---")
-    except ValueError as e:
-        print(f"\n--- Error During Task Generation ---")
-        print(f"An error occurred: {e}")
-    except Exception as e:
-        print(f"\n--- An Unexpected System Error Occurred ---")
-        print(f"Error details: {e}")
+#     print("--- Generating Coding Tasks ---")
+#     try:
+#         generated_tasks_json = generate_dynamic_coding_tasks(project_summary)
+#         print("\n--- Generated Tasks (JSON) ---")
+#         print(generated_tasks_json)
+#         print("\n--- Task Generation Successful ---")
+#     except ValueError as e:
+#         print(f"\n--- Error During Task Generation ---")
+#         print(f"An error occurred: {e}")
+#     except Exception as e:
+#         print(f"\n--- An Unexpected System Error Occurred ---")
+#         print(f"Error details: {e}")

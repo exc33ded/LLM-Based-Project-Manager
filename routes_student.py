@@ -139,6 +139,7 @@ def add_project():
         start_date_str = request.form['start_date']
         start_date = datetime.strptime(start_date_str, '%Y-%m-%d') 
         synopsis = request.files['synopsis']
+        enable_ai_tasks = 'generate_tasks' in request.form
 
         # Validate file type
         if not synopsis.filename.lower().endswith('.pdf'):
@@ -183,21 +184,22 @@ def add_project():
         db.session.commit()
 
         # Generate tasks based on the summary
-        try:
-            task_data = json.loads(generate_dynamic_coding_tasks(summary))
-            for task_title, task_details in task_data.items():
-                new_task = Task(
-                    title=task_title,
-                    description=task_details["Task Description"],
-                    due_date=datetime.strptime(task_details["Date"], '%Y-%m-%d'),
-                    status='In Progress',
-                    project_id=project.id
-                )
-                db.session.add(new_task)
-            db.session.commit()
-        except ValueError or Exception as e:
-            flash(f"Task generation failed: {e}", "danger")
-            return redirect(url_for('student_routes.view_projects'))
+        if enable_ai_tasks:
+            try:
+                task_data = json.loads(generate_dynamic_coding_tasks(summary))
+                for task_title, task_details in task_data.items():
+                    new_task = Task(
+                        title=task_title,
+                        description=task_details["Task Description"],
+                        due_date=datetime.strptime(task_details["Date"], '%Y-%m-%d'),
+                        status='In Progress',
+                        project_id=project.id
+                    )
+                    db.session.add(new_task)
+                db.session.commit()
+            except ValueError or Exception as e:
+                flash(f"Task generation failed: {e}", "danger")
+                return redirect(url_for('student_routes.view_projects'))
 
         flash_unique("Project added successfully!", "success", persistent=False)
         return redirect(url_for('student_routes.view_projects'))
