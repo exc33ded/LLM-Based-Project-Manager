@@ -258,11 +258,21 @@ def generate_dynamic_coding_tasks(summary: str) -> str:
 # if __name__ == "__main__":
 #     # Example project summary
 #     project_summary = """
-#     Create a Python-based web application using the Flask framework.
-#     The application should allow users to register, log in, and create/manage simple text notes.
-#     Notes should be stored in a PostgreSQL database.
-#     The user interface should be clean and responsive, built using basic HTML, CSS, and potentially a lightweight CSS framework like Bootstrap.
-#     Include basic testing for core functionalities.
+    
+# esbuild is an open-source JavaScript bundler and minifier developed by Evan Wallace. Written in Go, esbuild is renowned for its exceptional speed, often outperforming traditional JavaScript-based bundlers by a significant margin. This performance advantage stems from Go's efficient concurrency model and the ability to compile to native code, enabling esbuild to leverage parallelism effectively and utilize system resources optimally. ​
+# byby.dev
+
+# The architecture of esbuild is meticulously designed to maximize efficiency and minimize unnecessary processing. It operates primarily through two phases: the scan phase and the compile phase. During the scan phase, esbuild traverses the dependency graph starting from the specified entry points, identifying and parsing all requisite modules concurrently. This parallel processing is facilitated by Go's goroutines, allowing for rapid analysis of complex project structures. ​
+# GitHub
+
+# In the compile phase, esbuild performs tasks such as linking imports and exports, transforming the abstract syntax trees (ASTs) into JavaScript code, and concatenating them to produce the final bundled output. Notably, esbuild supports both ES6 and CommonJS module formats seamlessly, allowing developers to use a mix of module systems within the same project. Additionally, esbuild incorporates advanced features like tree shaking to eliminate unused code, code splitting for optimized loading, and source map generation for improved debugging. ​
+# GitHub
+
+# A distinctive aspect of esbuild's design is its minimalistic approach to AST passes. By consolidating multiple transformations into just a few passes, esbuild enhances cache locality and reduces overhead, contributing to its high-speed performance. Furthermore, esbuild is designed to support incremental builds through a watch mode, enabling efficient recompilation by only processing changed files. ​
+# GitHub
+
+# esbuild's versatility and performance have led to its adoption in various modern development tools and frameworks, including Vite, Angular (since version 17), and Ruby on Rails (since version 7). Its ability to handle TypeScript, JSX, and CSS out of the box, combined with a plugin-friendly architecture, makes it a compelling choice for developers seeking a fast and flexible bundling solution. ​
+
 #     """
 
 #     print("--- Generating Coding Tasks ---")
