@@ -186,7 +186,7 @@ def add_project():
         # Generate tasks based on the summary
         if enable_ai_tasks:
             try:
-                task_data = json.loads(generate_dynamic_coding_tasks(summary))
+                task_data = json.loads(generate_dynamic_coding_tasks(summary, start_date=str(start_date)))
                 for task_title, task_details in task_data.items():
                     new_task = Task(
                         title=task_title,
@@ -1178,6 +1178,7 @@ def archive_search_chatbot():
     3. Focus on providing accurate project summaries and basic information
     4. Do not make assumptions or provide information beyond what's in the project data
     5. If the project or information provided don't match, you will request them on trying to use the search bar or try any other keyword to continue.
+    6. You will always give an answer to the user query.
     """
     
     # Prepare prompt for search

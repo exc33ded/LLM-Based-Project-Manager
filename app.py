@@ -7,6 +7,7 @@ from models import User
 from werkzeug.security import generate_password_hash
 from dotenv import load_dotenv  
 from waitress import serve
+from werkzeug.exceptions import HTTPException
 
 app = Flask(__name__)
 

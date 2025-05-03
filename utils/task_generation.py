@@ -14,13 +14,14 @@ if not api_key:
 
 client = Groq(api_key=api_key)
 
-def generate_dynamic_coding_tasks(summary: str) -> str:
+def generate_dynamic_coding_tasks(summary: str, start_date: str = None) -> str:
     """
     Dynamically generates coding tasks with sequential dates in JSON format, based on a project summary,
     guided by project management principles and ISO 21502 compliance.
 
     Parameters:
         summary (str): The project summary to generate tasks for.
+        start_date (str): Optional start date in 'YYYY-MM-DD' format. If not provided, uses today's date.
 
     Returns:
         str: JSON string representing the structured list of tasks with titles,
@@ -31,7 +32,20 @@ def generate_dynamic_coding_tasks(summary: str) -> str:
                     parsed as JSON, or if the response format is unexpected.
         Exception: Catches other potential errors during API call or processing.
     """
-    base_date = datetime.today()
+    # Convert start_date to datetime or use today's date, ensuring time is stripped
+    try:
+        if start_date:
+            # First try to parse the date directly
+            try:
+                base_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            except ValueError:
+                # If that fails, try parsing with time and extract just the date
+                base_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S').date()
+        else:
+            base_date = datetime.today().date()
+    except ValueError as e:
+        raise ValueError(f"Invalid date format. Please use YYYY-MM-DD format. Error: {e}")
+
     num_tasks = random.randint(10, 15)
 
     # --- Initial Task Generation Prompt ---
@@ -116,7 +130,7 @@ def generate_dynamic_coding_tasks(summary: str) -> str:
                 print(f"Warning: Task '{title}' had invalid/missing duration. Defaulted to {duration} day(s).")
             details["Date"] = current_date.strftime('%Y-%m-%d')
             processed_tasks[title] = details
-            current_date += timedelta(days=duration)
+            current_date = (current_date + timedelta(days=duration))
 
         tasks_json = json.dumps(processed_tasks, indent=2)
         print("Initial task processing complete.")
@@ -238,10 +252,10 @@ def generate_dynamic_coding_tasks(summary: str) -> str:
                 details["Estimated Duration (days)"] = duration
             details["Date"] = current_date.strftime('%Y-%m-%d')
             processed_tasks[title] = details
-            current_date += timedelta(days=duration)
+            current_date = (current_date + timedelta(days=duration))
 
         print("Task regeneration complete.")
-        print(processed_tasks)
+        # print(processed_tasks)
         return json.dumps(processed_tasks, indent=2)
 
     except json.JSONDecodeError as e:

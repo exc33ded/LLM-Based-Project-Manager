@@ -237,7 +237,7 @@ def add_project(user_id):
 
         # Generate tasks based on the summary
         try:
-            task_data = json.loads(generate_dynamic_coding_tasks(summary))
+            task_data = json.loads(generate_dynamic_coding_tasks(summary, start_date=str(start_date)))
             for task_title, task_details in task_data.items():
                 new_task = Task(
                     title=task_title,
