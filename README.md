@@ -84,11 +84,30 @@ MAIL_SERVER=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USE_TLS=True
 MAIL_USERNAME="your-email-username-here"
-MAIL_PASSWORD="your-email-password-here"
+MAIL_PASSWORD="your-email-password-here-generated"
 ```
 
 **Important:** Replace the placeholder values (e.g., your-gemini-api-key-here) with your actual API keys and credentials. Do not use the example values directly, as they are for demonstration purposes only.
 
+**Important Links:**
+1. https://console.groq.com/home
+   - Go to `https://console.groq.com/keys` to create the api key.
+3. https://aistudio.google.com/welcome
+   - Click on `Go to Google AI Studio`
+   - Click on `Get API key` to create the api key.
+   - Paste it on `GOOGLE_API_KEY` and `GEMINI_API_KEY`
+5. https://smith.langchain.com/
+   - Click on `Set up tracing`.
+   - Select `With Langchain`
+   - Set the Langchain Api key.
+   - Set up the project name.
+   - Copy the information below of Langsmith.
+   - We are done with the Langchain Part.
+6. https://myaccount.google.com/
+   - Click on `Securiy` from the navbar.
+   - Search for `App passwords`.
+   - Type your app name, and click enter.
+   - A password will be displayed, copy it and save it in `MAIL_PASSWORD`. The `MAIL_USERNAME` will be your email.
 
 ## Usage
 
