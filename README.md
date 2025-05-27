@@ -101,8 +101,13 @@ MAIL_PASSWORD="your-email-password-here-generated"
    - Select `With Langchain`
    - Set the Langchain Api key.
    - Set up the project name.
-   - Copy the information below of Langsmith.
-   - We are done with the Langchain Part.
+   - Copy the information below info of Langsmith.
+   - We are done with the Langsmith Part.
+  
+   - Go back to the dashboard.
+   - Click on `Settings`
+   - Click `API Keys` and create a new API key.
+   - Both the Langchain and Langsmith will utlized different API Keys.
 6. https://myaccount.google.com/
    - Click on `Securiy` from the navbar.
    - Search for `App passwords`.
