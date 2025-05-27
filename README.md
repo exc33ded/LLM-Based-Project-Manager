@@ -21,6 +21,16 @@
 4. **Project-Specific Memory**: Each project has its own memory-based chat feature, allowing users to communicate specifically for that project, with the system retaining the project's history.
 5. **AI Interaction**: The AI uses the project summary to manage tasks, providing intelligent recommendations and tracking progress efficiently.
 
+## Requirements
+
+- **Python Version**: This project requires Python 3.12.4. Ensure you have this version installed before proceeding.
+- Other dependencies are listed in `requirements.txt`.
+
+To check your Python version, run:
+```bash
+python --version
+```
+
 ## Installation
 
 1. Clone the repository:
