@@ -50,6 +50,46 @@ pip install -r requirements.txt
 python app.py
 ```
 
+## Setting up the .env file
+
+To configure the project, you need to set up a `.env` file with the required environment variables. This file contains sensitive information such as API keys and database credentials, which are necessary for the project to function correctly.
+
+Steps to Set Up the `.env` File
+
+1. Copy the example file
+The project includes a `.env.example` file as a template. Copy it to create your `.env` file:
+
+```bash
+cp .env.example .env
+```
+
+2. Edit the `.env` file
+Open the `.env` file in a text editor and fill in the values for the following environment variables. Below is an example based on the project's requirements:
+
+```bash
+# AI API Keys (for project summary generation and task management)
+GEMINI_API_KEY="your-gemini-api-key-here"
+GROQ_API_KEY="your-groq-api-key-here"
+LANGCHAIN_API_KEY="your-langchain-api-key-here"
+GOOGLE_API_KEY="your-gemini-api-key-here"
+
+# LangSmith Configuration (for tracing and project management)
+LANGSMITH_TRACING=true
+LANGSMITH_ENDPOINT=https://api.smith.langchain.com
+LANGSMITH_API_KEY="your-langsmith-api-key-here"
+LANGSMITH_PROJECT="your-project-name"
+
+# Email Configuration (for notifications or authentication)
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_TLS=True
+MAIL_USERNAME="your-email-username-here"
+MAIL_PASSWORD="your-email-password-here"
+```
+
+**Important:** Replace the placeholder values (e.g., your-gemini-api-key-here) with your actual API keys and credentials. Do not use the example values directly, as they are for demonstration purposes only.
+
+
 ## Usage
 
 1. **Sign Up / Log In**  
